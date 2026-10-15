@@ -1,52 +1,42 @@
-# Project Completion & Handover Report
-**Project:** FCP League Manager 27  
+# Project Status Report — FCP League Manager 27
 **Date:** 15 October 2026  
 **Repository:** https://github.com/FrostwraithGaming/fcp-league-manager  
-**Dashboard:** https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015d
+**Dashboard:** https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015f  
+**Supabase project:** ekfziidavohcdzbypocn
 
-## Executive status
+## What is implemented
 
-Core cloud monitoring and dashboard support have been implemented. The remaining hard blocker is a verified, supported FC Mobile source for live league rosters and Activity Points. The project cannot be called fully hands-free until that source is found, connected and validated.
-
-## Completed
-
-- Updated the dashboard to show estimated AP gain this week, unread alert count, a persistent alert inbox, “mark read” actions, and manual refresh.
-- Added `public.league_alerts` with unique alert fingerprints and row-level security.
-- Deployed `public.monitor_league_activity()` and scheduled it using Supabase pg_cron every 30 minutes.
-- Implemented two-hour onboarding review alerts for members still below the 500 AP target.
-- Implemented weekly AP shortfall checks for Sunday from 20:00 Asia/Kolkata. Weekly estimates require a recent pre-week baseline and an in-week snapshot. Missing evidence creates a data-coverage alert rather than a guessed result.
-- Tightened RLS on `league_members`, `activity_history`, `league_settings`, and `league_alerts` to require `app_metadata.role = league_admin`.
-- Assigned that role to the project's one existing Supabase Auth account at migration time.
-- Updated README and added a deployment/connection guide.
+- Supabase-authenticated admin dashboard. Browser code contains only the Supabase publishable key; it does not contain an EA password, EA session token, service-role key, or game cookie.
+- Reviewed screenshot OCR intake. The admin selects up to eight images, reviews/edits names and AP, and explicitly selects rows before saving.
+- New grouped roster snapshot tables: a snapshot header for each screenshot batch plus one row per reviewed member/AP and its import result. The screenshot image itself remains on the user's device and is not uploaded.
+- Existing per-member AP history remains the input to AP calculations.
+- Scheduled cloud monitoring remains active every 30 minutes, including onboarding (500 AP within two hours of first tracking) and weekly (1,500 AP) target alerts. Weekly checks produce a data-gap alert if snapshots are insufficient.
+- Added a manual-action review queue. Onboarding/weekly shortfall alerts generate a removal recommendation. Admin approval is an audited decision only; it does not call the game. After an admin removes the player manually in FC Mobile, they can confirm completion with an audit note, and the tracker then marks that member removed.
+- Added row-level security to the snapshot tables and a read-only RLS policy for action reviews. Approve/decline/complete operations run through server-side database functions that check the league_admin app-metadata role and enforce allowed status transitions.
+- Added integration-stage and migration documentation to the repository.
 
 ## Verification performed
 
-- Supabase confirms `fcp-league-monitor` exists and is active on schedule `*/30 * * * *`.
-- Manual monitor invocation ran successfully and returned a JSON summary.
-- That smoke test left one existing member record in review and created one persistent “Onboarding target missed” alert; no member rows were deleted.
-- Supabase confirmed one Auth account and one account with the admin role.
-- RLS policy inspection confirmed the role check on all four user-facing tables.
-- Updated `app.js` passed JavaScript syntax parsing; HTML audit found no missing/duplicate DOM IDs referenced by the script.
-- Weekly estimate sample tests passed for a normal increase (1,600 AP), a counter reset (800 AP) and missing baseline (await snapshot).
+- Browser JavaScript syntax parsed successfully using a JavaScript parser.
+- DOM audit found no missing or duplicate element IDs used by app.js.
+- Supabase confirms all seven data tables relevant to this dashboard have RLS enabled.
+- Supabase confirms the new snapshot tables and action-review table exist, and one existing shortfall review item was backfilled.
+- Supabase confirms one active fcp-league-monitor cron job remains scheduled every 30 minutes.
+- Existing security-advisor warning about leaked-password protection being disabled remains. The advisor also flags two SECURITY DEFINER RPCs as generally callable by authenticated users; those calls are intentional for this workflow and explicitly check the app_metadata league_admin claim before changing review status. Keep the admin claim restricted to trusted accounts.
+- No real FC Mobile screenshot was available in this session, so OCR accuracy on the user's actual display remains unverified.
 
-## Still connection-dependent / not verified
+## Not implemented / not verified
 
-1. **Live FC Mobile feed:** no verified supported league/member/AP endpoint has been confirmed or connected. Current intake remains manual AP update or admin-uploaded screenshot OCR. A connector must be based on an authorized, tested source.
-2. **Real-game OCR tuning:** no live league screenshot was available for final accuracy testing.
-3. **Public Pages rendering:** changes are committed to main, but the public URL could not be independently fetched during this verification session.
-4. **Discord delivery:** the in-dashboard alert inbox works; external delivery is not connected. If needed, store a private Discord webhook in Supabase Vault under `discord_webhook_url` using the connection guide.
-5. **Auth configuration:** sign out/in once to refresh the admin role claim. Confirm public sign-ups remain disabled in Supabase Authentication settings.
-6. **Automatic kick:** intentionally not enabled. No verified supported FC Mobile membership-management method is wired in. Shortfalls go to review; any removal remains a human decision.
+1. **Live game data API:** No documented official FC Mobile league-member/AP endpoint was found in EA's public help/support materials. The community tracker found is screenshot/OCR-based, not a live API. The current fallback is screenshot review, not live ingestion.
+2. **EA account connection:** Not implemented because no safe, documented authentication and data-access path has been verified. Do not enter EA credentials or session tokens into this website.
+3. **Automatic kicking:** Not implemented. The workflow only tracks the human decision and manual completion; no game action is executed.
+4. **Public Pages deployment:** The code is committed to main with cache-busted assets, but a real authenticated end-to-end test still requires signing into the dashboard and importing an actual roster screenshot. Do not regard this as a tested live data connector.
+5. **Discord notifications:** Optional webhook delivery is not connected unless a secret has been configured in Supabase Vault.
 
-## Connection / launch checklist
+## Next validation steps
 
-- [ ] Sign out and sign in again; confirm the dashboard loads members and alerts.
-- [ ] Confirm Supabase public sign-ups are disabled and only trusted accounts carry `league_admin`.
-- [ ] Upload and validate a real member-list screenshot; correct any OCR errors before saving.
-- [ ] Continue snapshots so weekly estimation has a baseline and at least one in-week sample.
-- [ ] Optionally connect Discord alerts using the Supabase Vault instructions in [DEPLOYMENT_AND_CONNECTION.md](DEPLOYMENT_AND_CONNECTION.md).
-- [ ] Identify, connect and validate a legitimate live FC Mobile data source before calling this fully automated.
-
-## Safety and key handling
-
-No EA password, session cookie, or access token was requested or added to website code. The browser continues to use only the Supabase publishable key. No service-role key is exposed in GitHub. No stealth or detection-evasion method was implemented.
+- Sign out and sign back in to refresh the Supabase admin metadata claim.
+- Import one real league member screenshot, check every value, save it, and confirm both the snapshot history table and AP history.
+- Review a shortfall recommendation in the dashboard. Do not click "Confirm removed in game" until a real manual removal has occurred in FC Mobile.
+- Keep public sign-ups disabled and only assign app_metadata.role = league_admin via a trusted admin path.
+- Reassess a live connector only if EA publishes or confirms an authorized API/interface for league rosters and Activity Points.
