@@ -6,6 +6,8 @@ let allMembers = [];
 let members = [];
 let allHistory = [];
 let allAlerts = [];
+let allSnapshots = [];
+let allActions = [];
 let ocrDrafts = [];
 let rawOcrText = "";
 
@@ -113,23 +115,83 @@ function renderAlerts() {
       (alert.read_at ? "" : '<button class="tiny" type="button" data-alert-read="' + Number(alert.id) + '">Mark read</button>') + '</td></tr>';
   }).join("");
 }
+
+function renderSnapshots() {
+  const tbody = $("snapshotsBody");
+  if (!tbody) return;
+  if (!allSnapshots.length) {
+    tbody.innerHTML = '<tr class="empty"><td colspan="6">No screenshot roster snapshots have been saved yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allSnapshots.map(snapshot => {
+    const source = snapshot.source === "reviewed_screenshot_ocr" ? "Reviewed screenshots" : "Manual entry";
+    const status = snapshot.status === "complete" ? "Complete" : snapshot.status === "partial" ? "Partial" :
+      snapshot.status === "failed" ? "Failed" : "Processing";
+    const statusClass = snapshot.status === "complete" ? "good" : snapshot.status === "failed" ? "bad" : "";
+    return '<tr><td>' + safe(new Date(snapshot.scanned_at).toLocaleString()) + '</td><td>' + safe(source) +
+      '</td><td>' + safe(snapshot.detected_rows) + '</td><td>' + safe(snapshot.saved_rows) +
+      '</td><td>' + safe(snapshot.skipped_rows) + '</td><td><span class="status-text ' + statusClass + '">' +
+      safe(status) + ' · ' + safe(snapshot.failed_rows) + ' failed</span></td></tr>';
+  }).join("");
+}
+function renderActionReviews() {
+  const tbody = $("actionReviewsBody");
+  if (!tbody) return;
+  if (!allActions.length) {
+    tbody.innerHTML = '<tr class="empty"><td colspan="5">No removal recommendations are awaiting review. Shortfall alerts may create recommendations when verified snapshot data shows a target was missed.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allActions.map(action => {
+    const member = allMembers.find(m => String(m.id) === String(action.member_id));
+    const stateLabel = action.status === "pending" ? "Pending review" :
+      action.status === "approved" ? "Approved for manual action" :
+      action.status === "declined" ? "Declined" : "Completed manually";
+    let controls = "";
+    if (action.status === "pending") {
+      controls = '<div class="action-buttons"><button class="tiny" type="button" data-action-decision="' +
+        Number(action.id) + '" data-decision="approve">Approve manual removal</button><button class="tiny" type="button" data-action-decision="' +
+        Number(action.id) + '" data-decision="decline">Decline</button></div>';
+    } else if (action.status === "approved") {
+      controls = '<button class="tiny" type="button" data-action-complete="' + Number(action.id) +
+        '">Confirm removed in game</button>';
+    } else if (action.status === "completed" && action.completion_note) {
+      controls = '<div class="action-note">' + safe(action.completion_note) + '</div>';
+    }
+    return '<tr><td>' + safe(new Date(action.proposed_at).toLocaleString()) + '</td><td><strong>' +
+      safe(member?.player_name || "League member") + '</strong><div class="alert-type">Manual removal recommendation</div></td><td>' +
+      '<div class="action-reason">' + safe(action.reason) + '</div></td><td><span class="status-text ' +
+      (action.status === "pending" ? "bad" : action.status === "completed" ? "good" : "") + '">' + safe(stateLabel) +
+      '</span></td><td>' + controls + '</td></tr>';
+  }).join("");
+}
+
 async function loadMembers() {
   const { data, error } = await db.from("league_members").select("*").order("joined_at", {ascending:false});
   if (error) throw error;
   allMembers = data || [];
   members = allMembers.filter(m => m.status !== "removed");
   const historySince = new Date(Date.now() - 16 * 86400000).toISOString();
-  const [historyResult, alertResult] = await Promise.all([
+  const [historyResult, alertResult, snapshotResult, actionResult] = await Promise.all([
     db.from("activity_history").select("id,member_id,activity_points,recorded_at")
       .gte("recorded_at", historySince).order("recorded_at", {ascending:true}),
-    db.from("league_alerts").select("*").order("created_at", {ascending:false}).limit(25)
+    db.from("league_alerts").select("*").order("created_at", {ascending:false}).limit(25),
+    db.from("league_roster_snapshots")
+      .select("id,scanned_at,detected_rows,saved_rows,skipped_rows,failed_rows,status,source")
+      .order("scanned_at", {ascending:false}).limit(12),
+    db.from("league_action_reviews").select("*").order("proposed_at", {ascending:false}).limit(50)
   ]);
   if (historyResult.error) throw historyResult.error;
   if (alertResult.error) throw alertResult.error;
+  if (snapshotResult.error) throw snapshotResult.error;
+  if (actionResult.error) throw actionResult.error;
   allHistory = historyResult.data || [];
   allAlerts = alertResult.data || [];
+  allSnapshots = snapshotResult.data || [];
+  allActions = actionResult.data || [];
   render();
   renderAlerts();
+  renderSnapshots();
+  renderActionReviews();
 }
 function readableAuthError(error) {
   const message = String(error?.message || "");
@@ -311,67 +373,149 @@ async function scanScreenshots(files) {
 }
 async function upsertOCRRows() {
   readDraftEdits();
-  const selected = ocrDrafts.filter(r=>r.selected);
+  const selected = ocrDrafts.filter(r => r.selected);
   if (!selected.length) {
     showMessage("Select at least one row to save.", true);
     return;
   }
   for (const row of selected) {
-    if (!row.name.trim() || !Number.isInteger(Number(row.points)) || Number(row.points)<0 || Number(row.points)>9999999) {
+    if (!String(row.name || "").trim() || !Number.isInteger(Number(row.points)) ||
+        Number(row.points) < 0 || Number(row.points) > 9999999) {
       showMessage("Every selected row needs a player name and a whole-number AP value.", true);
       return;
     }
   }
+
   const mode = $("syncMode").value;
   const button = $("syncSelected");
   button.disabled = true;
-  button.textContent = "Saving…";
-  let created=0, updated=0, skipped=0, failed=0;
+  button.textContent = "Saving snapshot…";
+  let snapshotId = null;
+  let created = 0, updated = 0, skipped = 0, failed = 0;
   const errors = [];
+  const snapshotRows = [];
   const scannedAt = new Date().toISOString();
-  for (const row of selected) {
-    const name = row.name.trim().replace(/\s+/g," ");
-    const points = Number(row.points);
-    const key = normalizedName(name);
-    const existing = allMembers.find(m=>normalizedName(m.player_name)===key);
-    if (existing?.status === "removed") {
-      skipped++;
-      continue;
+
+  try {
+    const {data: userData, error: userError} = await db.auth.getUser();
+    if (userError) throw userError;
+    const {data: snapshot, error: snapshotError} = await db.from("league_roster_snapshots").insert({
+      scanned_at: scannedAt,
+      source: "reviewed_screenshot_ocr",
+      uploaded_by: userData.user?.id || null,
+      detected_rows: selected.length,
+      status: "processing"
+    }).select("id").single();
+    if (snapshotError) throw snapshotError;
+    snapshotId = snapshot.id;
+
+    for (const row of selected) {
+      const name = String(row.name).trim().replace(/\s+/g, " ");
+      const points = Number(row.points);
+      const key = normalizedName(name);
+      const existing = allMembers.find(m => normalizedName(m.player_name) === key);
+      let memberId = existing?.id ?? null;
+      let outcome = "failed";
+      let details = null;
+
+      if (existing?.status === "removed") {
+        skipped++;
+        outcome = "skipped";
+        details = "Already marked removed; no member record changed.";
+        snapshotRows.push({snapshot_id:snapshotId,member_id:memberId,player_name:name,activity_points:points,
+          ocr_confidence:Number.isFinite(Number(row.confidence)) ? Math.max(0,Math.min(100,Math.round(Number(row.confidence)))) : null,
+          outcome,details});
+        continue;
+      }
+
+      if (existing) {
+        let nextStatus = existing.status;
+        const earned = Math.max(0, points - Number(existing.initial_points || 0));
+        const deadline = new Date(existing.initial_deadline || (new Date(existing.joined_at).getTime() + 7200000)).getTime();
+        if (mode === "baseline") nextStatus = "active";
+        else if (earned >= 500) nextStatus = "active";
+        else if (nextStatus !== "active" && Date.now() >= deadline) nextStatus = "review";
+        const {error} = await db.from("league_members").update({
+          last_points:points,last_checked_at:scannedAt,status:nextStatus
+        }).eq("id",existing.id);
+        if (error) {
+          failed++;
+          errors.push(name + ": " + error.message);
+          snapshotRows.push({snapshot_id:snapshotId,member_id:memberId,player_name:name,activity_points:points,
+            ocr_confidence:Number.isFinite(Number(row.confidence)) ? Math.max(0,Math.min(100,Math.round(Number(row.confidence)))) : null,
+            outcome:"failed",details:error.message});
+          continue;
+        }
+        updated++;
+        outcome = "updated";
+      } else {
+        const baseline = mode === "baseline";
+        const {data,error} = await db.from("league_members").insert({
+          player_name:name,initial_points:points,last_points:points,last_checked_at:scannedAt,
+          status:baseline ? "active" : "pending"
+        }).select().single();
+        if (error) {
+          failed++;
+          errors.push(name + ": " + error.message);
+          snapshotRows.push({snapshot_id:snapshotId,member_id:null,player_name:name,activity_points:points,
+            ocr_confidence:Number.isFinite(Number(row.confidence)) ? Math.max(0,Math.min(100,Math.round(Number(row.confidence)))) : null,
+            outcome:"failed",details:error.message});
+          continue;
+        }
+        memberId = data.id;
+        created++;
+        outcome = "created";
+      }
+
+      const history = await db.from("activity_history").insert({
+        member_id:memberId,activity_points:points,recorded_at:scannedAt
+      });
+      if (history.error) {
+        failed++;
+        errors.push(name + " activity history: " + history.error.message);
+        outcome = "failed";
+        details = "Member record saved but activity history failed: " + history.error.message;
+      }
+      snapshotRows.push({snapshot_id:snapshotId,member_id:memberId,player_name:name,activity_points:points,
+        ocr_confidence:Number.isFinite(Number(row.confidence)) ? Math.max(0,Math.min(100,Math.round(Number(row.confidence)))) : null,
+        outcome,details});
     }
-    let memberId;
-    if (existing) {
-      const elapsed = (Date.now()-new Date(existing.joined_at).getTime())/3600000;
-      const earned = Math.max(0, points-Number(existing.initial_points||0));
-      let nextStatus = existing.status;
-      if (mode === "baseline") nextStatus = "active";
-      else if (earned >= 500) nextStatus = "active";
-      else if (nextStatus !== "active" && Date.now() >= new Date(existing.initial_deadline || (new Date(existing.joined_at).getTime()+7200000)).getTime()) nextStatus = "review";
-      const {error} = await db.from("league_members").update({
-        last_points:points,last_checked_at:scannedAt,status:nextStatus
-      }).eq("id",existing.id);
-      if (error) { failed++; errors.push(name+": "+error.message); continue; }
-      memberId = existing.id;
-      updated++;
-    } else {
-      const baseline = mode === "baseline";
-      const {data,error} = await db.from("league_members").insert({
-        player_name:name,
-        initial_points: baseline ? points : points,
-        last_points:points,
-        last_checked_at:scannedAt,
-        status: baseline ? "active" : "pending"
-      }).select().single();
-      if (error) { failed++; errors.push(name+": "+error.message); continue; }
-      memberId = data.id;
-      created++;
+
+    const rowInsert = await db.from("league_roster_snapshot_rows").insert(snapshotRows);
+    if (rowInsert.error) errors.push("Snapshot rows: " + rowInsert.error.message);
+
+    const savedRows = snapshotRows.filter(r => r.outcome === "created" || r.outcome === "updated").length;
+    const skippedRows = snapshotRows.filter(r => r.outcome === "skipped").length;
+    const failedRows = snapshotRows.filter(r => r.outcome === "failed").length + (rowInsert.error ? snapshotRows.length : 0);
+    const snapshotStatus = failedRows === 0 ? "complete" : (savedRows === 0 && skippedRows === 0 ? "failed" : "partial");
+    const snapshotUpdate = await db.from("league_roster_snapshots").update({
+      saved_rows:savedRows,skipped_rows:skippedRows,failed_rows:failedRows,status:snapshotStatus
+    }).eq("id",snapshotId);
+    if (snapshotUpdate.error) errors.push("Snapshot summary: " + snapshotUpdate.error.message);
+
+    try { await loadMembers(); } catch (e) { errors.push("Reload: " + e.message); }
+  } catch (e) {
+    errors.push(e?.message || String(e));
+    if (snapshotId !== null) {
+      try {
+        await db.from("league_roster_snapshots").update({
+          status:"partial",failed_rows:selected.length
+        }).eq("id",snapshotId);
+        await loadMembers();
+      } catch (_) {}
     }
-    const history = await db.from("activity_history").insert({member_id:memberId,activity_points:points,recorded_at:scannedAt});
-    if (history.error) errors.push(name+" activity history: "+history.error.message);
+  } finally {
+    button.disabled = false;
+    button.innerHTML = 'Save selected to Supabase <span aria-hidden="true">→</span>';
   }
-  try { await loadMembers(); } catch (e) { errors.push("Reload: "+e.message); }
-  $("syncSelected").disabled = false;
-  $("syncSelected").innerHTML = 'Save selected to Supabase <span aria-hidden="true">→</span>';
-  showMessage("Sync complete: "+created+" added, "+updated+" updated, "+skipped+" skipped (already removed), "+failed+" failed."+(errors.length ? " Details: "+errors.slice(0,3).join(" | ") : ""));
+
+  if (snapshotId === null) {
+    showMessage("Snapshot could not be started, so no AP rows were processed. Details: " + errors.slice(0,3).join(" | "), true);
+  } else {
+    showMessage("Roster snapshot #" + snapshotId + ": " + created + " added, " + updated + " updated, " +
+      skipped + " skipped, " + failed + " row/history issue(s)." +
+      (errors.length ? " Details: " + errors.slice(0,3).join(" | ") : ""));
+  }
 }
 async function init() {
   if (!window.supabase || typeof window.supabase.createClient !== "function") {
@@ -413,6 +557,51 @@ async function init() {
     }catch(e){showMessage("Could not save the member. Details: "+e.message,true);}
     finally{button.disabled=false;}
   });
+
+  $("actionReviewsBody").addEventListener("click", async event => {
+    const decisionButton = event.target.closest("button[data-action-decision]");
+    if (decisionButton) {
+      const decision = decisionButton.dataset.decision;
+      const actionId = Number(decisionButton.dataset.actionDecision);
+      if (decision === "approve" && !window.confirm("Approve this recommendation for manual in-game removal? This website will not kick the member.")) return;
+      if (decision === "decline" && !window.confirm("Decline this removal recommendation?")) return;
+      decisionButton.disabled = true;
+      try {
+        const {error} = await db.rpc("review_league_action", {p_action_id:actionId,p_decision:decision});
+        if (error) throw error;
+        await loadMembers();
+        showMessage(decision === "approve" ? "Approved for manual action only. No in-game action was executed." : "Recommendation declined.");
+      } catch (e) {
+        showMessage("Could not review this recommendation. Details: " + e.message, true);
+      } finally {
+        decisionButton.disabled = false;
+      }
+      return;
+    }
+
+    const completeButton = event.target.closest("button[data-action-complete]");
+    if (!completeButton) return;
+    if (!window.confirm("Only continue if you have already removed this member inside FC Mobile. The website cannot perform the kick. Confirm manually completed?")) return;
+    const note = window.prompt("Record what you did in FC Mobile:", "Removed manually in FC Mobile by league admin");
+    if (!note || !note.trim()) {
+      showMessage("A completion note is required; the review was left approved.", true);
+      return;
+    }
+    completeButton.disabled = true;
+    try {
+      const {error} = await db.rpc("complete_league_action", {
+        p_action_id:Number(completeButton.dataset.actionComplete),p_note:note.trim()
+      });
+      if (error) throw error;
+      await loadMembers();
+      showMessage("Manual removal recorded. The member is now marked removed in this tracker.");
+    } catch (e) {
+      showMessage("Could not complete the review. Details: " + e.message, true);
+    } finally {
+      completeButton.disabled = false;
+    }
+  });
+
   $("alertsBody").addEventListener("click", async event => {
     const button = event.target.closest("button[data-alert-read]");
     if (!button) return;
