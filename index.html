@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f5f8fc">
   <meta name="description" content="A multi-league FC Mobile roster, AP quota, and membership review workspace.">
   <title>FCP League Manager — League operations, simplified</title>
-  <link rel="stylesheet" href="styles.css?v=20261015h">
+  <link rel="stylesheet" href="styles.css?v=20261015i">
 </head>
 <body>
   <div class="page-glow glow-a" aria-hidden="true"></div>
@@ -165,7 +165,7 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer onload="window.initFcpTurnstile && window.initFcpTurnstile()"></script>
   <script src="app.js?v=20261015h"></script>
 </body>
 </html>
