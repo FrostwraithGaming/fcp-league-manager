@@ -30,3 +30,12 @@ No verified supported data source for current league members and AP has been con
 ## What is not automated
 
 The system flags shortfalls but does not kick members in-game. There is no verified supported in-game membership-management interface wired to this project. Review alerts and take any removal action manually.
+
+
+## Staged integration update — 15 October 2026
+
+The site now stores each reviewed screenshot batch in league_roster_snapshots, with per-row import outcomes in league_roster_snapshot_rows. Images are processed locally and are not uploaded. The admin must review and correct OCR output before it is saved.
+
+Shortfall alerts create records in league_action_reviews. Admins can approve or decline through guarded database functions. Approval is not a game action; after manually removing a member in FC Mobile, the admin can record completion and an audit note. This completion updates the tracker only.
+
+No verified official FC Mobile league/AP data endpoint or supported in-game removal endpoint has been connected. Do not add EA credentials or session tokens to frontend JavaScript. Automatic kicking remains disabled.
