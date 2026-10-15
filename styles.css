@@ -117,3 +117,23 @@ footer{padding:27px 0 7px;text-align:center;color:#72819a;font-size:10px;line-he
   .alert-intro{font-size:12px}
   .alerts-table{min-width:680px}
 }
+
+
+/* Auditable roster snapshot history and guarded manual removal reviews */
+.snapshot-table{min-width:690px}
+.snapshot-table td{white-space:nowrap}
+.action-review-table{min-width:950px}
+.action-review-table td{white-space:normal;vertical-align:top}
+.action-review-table td:first-child{min-width:140px;color:#94a5bd;font-size:11px}
+.action-review-table td:nth-child(2){min-width:150px}
+.action-review-table td:nth-child(3){min-width:300px;max-width:480px}
+.action-review-table td:nth-child(4){min-width:150px}
+.action-review-table td:last-child{min-width:230px}
+.action-reason{max-width:470px;color:#9eafc7;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+.action-note{margin-top:4px;color:#8fa6c2;font-size:10px;overflow-wrap:anywhere}
+.action-buttons{display:flex;gap:6px;flex-wrap:wrap}
+.action-review-panel .panel-head,.snapshot-panel .panel-head{align-items:center}
+@media(max-width:680px){
+  .action-review-panel .panel-head,.snapshot-panel .panel-head{align-items:flex-start}
+  .snapshot-table{min-width:680px}
+}
