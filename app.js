@@ -486,7 +486,7 @@ async function upsertOCRRows() {
 
     const savedRows = snapshotRows.filter(r => r.outcome === "created" || r.outcome === "updated").length;
     const skippedRows = snapshotRows.filter(r => r.outcome === "skipped").length;
-    const failedRows = snapshotRows.filter(r => r.outcome === "failed").length + (rowInsert.error ? snapshotRows.length : 0);
+    const failedRows = rowInsert.error ? selected.length : snapshotRows.filter(r => r.outcome === "failed").length;
     const snapshotStatus = failedRows === 0 ? "complete" : (savedRows === 0 && skippedRows === 0 ? "failed" : "partial");
     const snapshotUpdate = await db.from("league_roster_snapshots").update({
       saved_rows:savedRows,skipped_rows:skippedRows,failed_rows:failedRows,status:snapshotStatus
