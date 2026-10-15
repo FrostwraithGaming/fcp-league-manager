@@ -3,56 +3,77 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080c18">
+  <meta name="theme-color" content="#080d18">
+  <meta name="description" content="FCP League Manager — secure league member and activity tracking.">
   <title>FCP League Manager 27</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261015b">
 </head>
 <body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
   <div class="shell">
     <header class="topbar">
-      <div class="brand-mark">F</div>
-      <div><div class="eyebrow">LEAGUE OPERATIONS</div><h1>FCP League Manager <span>27</span></h1></div>
-      <div class="status-pill" id="statusLabel"><i></i> Sign in required</div>
+      <a class="brand" href="./" aria-label="FCP League Manager home">
+        <div class="brand-mark">F</div>
+        <div class="brand-copy"><div class="eyebrow">LEAGUE OPERATIONS</div><h1>FCP League Manager <span>27</span></h1></div>
+      </a>
+      <div class="status-pill" id="statusLabel"><i></i><span>Sign in required</span></div>
     </header>
     <main>
       <section class="hero">
-        <div><p class="eyebrow">YOUR LEAGUE, AT A GLANCE</p><h2>Stay on top of<br><span>every activity target.</span></h2><p class="sub">A cloud-saved control panel for onboarding and weekly activity rules.</p></div>
-        <div class="hero-symbol" aria-hidden="true">⚡</div>
+        <div class="hero-copy">
+          <p class="eyebrow">YOUR LEAGUE. UNDER CONTROL.</p>
+          <h2>Every member.<br><span>Every activity target.</span></h2>
+          <p class="sub">A clear, secure workspace for tracking onboarding and weekly activity.</p>
+        </div>
+        <div class="hero-symbol" aria-hidden="true"><span>↗</span></div>
       </section>
+
       <section id="authPanel" class="panel auth-panel">
-        <p class="eyebrow">ADMIN ACCESS</p><h3>Sign in to your league dashboard</h3>
-        <p class="sub">Use the admin account you create in Supabase. Public sign-up is intentionally not provided.</p>
+        <div class="panel-kicker"><span class="secure-dot"></span> PRIVATE ADMIN AREA</div>
+        <h3>Welcome back</h3>
+        <p class="panel-sub">Sign in with the administrator account you created in Supabase.</p>
         <form id="loginForm" class="form-grid">
-          <label>Email<input id="email" type="email" autocomplete="username" required></label>
-          <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
-          <button id="loginButton" class="primary" type="submit">Sign in</button>
+          <label for="email">Email address
+            <input id="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com" required>
+          </label>
+          <label for="password">Password
+            <input id="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+          </label>
+          <button id="loginButton" class="primary" type="submit"><span>Sign in securely</span><span aria-hidden="true">→</span></button>
         </form>
+        <p class="security-note"><span aria-hidden="true">●</span> Protected by Supabase authentication. No EA password is requested.</p>
       </section>
-      <p id="message" class="message" hidden role="status"></p>
+
+      <p id="message" class="message" hidden role="status" aria-live="polite"></p>
+
       <div id="appContent" hidden>
-        <div class="panel-head account-row"><span id="accountLabel"></span><button id="signOut" class="secondary" hidden>Sign out</button></div>
+        <div class="account-row"><div><span class="eyebrow">SIGNED IN AS</span><div id="accountLabel" class="account-email"></div></div><button id="signOut" class="secondary" type="button">Sign out</button></div>
         <section class="metrics">
-          <article class="metric"><div class="metric-label">New member target</div><div class="metric-value">500 <small>AP</small></div><div class="metric-note">Within 2 hours of joining</div></article>
-          <article class="metric"><div class="metric-label">Weekly target</div><div class="metric-value">1,500 <small>AP</small></div><div class="metric-note">Each 7-day period</div></article>
-          <article class="metric"><div class="metric-label">Tracked members</div><div class="metric-value" id="memberCount">0</div><div class="metric-note">Saved in Supabase</div></article>
+          <article class="metric"><div class="metric-top"><span class="metric-label">New member target</span><span class="metric-icon">01</span></div><div class="metric-value">500 <small>AP</small></div><div class="metric-note">Within 2 hours of joining</div></article>
+          <article class="metric"><div class="metric-top"><span class="metric-label">Weekly target</span><span class="metric-icon">02</span></div><div class="metric-value">1,500 <small>AP</small></div><div class="metric-note">Each 7-day period</div></article>
+          <article class="metric"><div class="metric-top"><span class="metric-label">Tracked members</span><span class="metric-icon">03</span></div><div class="metric-value" id="memberCount">0</div><div class="metric-note">Saved in your database</div></article>
         </section>
         <section class="panel">
           <div class="panel-head"><div><p class="eyebrow">MEMBER MANAGEMENT</p><h3>Member tracker</h3></div></div>
-          <div class="notice"><strong>Manual data entry:</strong> this dashboard saves member records and AP updates to Supabase. It does not read FC Mobile or kick players automatically.</div>
-          <form id="addMemberForm" class="add-row"><label for="playerName">Player name</label><input id="playerName" maxlength="80" required placeholder="Enter league player name"><button class="primary" type="submit">Add member</button></form>
-          <div class="table-wrap"><table><thead><tr><th>Player</th><th>Join time</th><th>Latest AP</th><th>Onboarding status</th><th>Action</th></tr></thead><tbody id="membersBody"><tr class="empty"><td colspan="5">Loading saved members…</td></tr></tbody></table></div>
+          <div class="notice"><strong>Current mode: manual AP entry.</strong> Member records and snapshots are saved to Supabase. The site is not yet connected to live FC Mobile data or automatic kicking.</div>
+          <form id="addMemberForm" class="add-row">
+            <label for="playerName">Add a league member</label>
+            <div class="add-controls"><input id="playerName" maxlength="80" required placeholder="Enter player name"><button class="primary" type="submit">Add member <span aria-hidden="true">+</span></button></div>
+          </form>
+          <div class="table-wrap"><table><thead><tr><th>PLAYER</th><th>JOINED</th><th>LATEST AP</th><th>ONBOARDING STATUS</th><th>ACTION</th></tr></thead><tbody id="membersBody"><tr class="empty"><td colspan="5">Loading saved members…</td></tr></tbody></table></div>
         </section>
         <section class="panel rules">
-          <div class="panel-head"><div><p class="eyebrow">AUTOMATION RULES</p><h3>Configured thresholds</h3></div><span class="tag">Tracking setup</span></div>
-          <div class="rule-row"><div class="rule-icon">01</div><div class="rule-copy"><strong>New-member onboarding</strong><p>At least 500 AP within 2 hours; overdue records can be flagged for review.</p></div><span class="rule-state">Tracked</span></div>
-          <div class="rule-row"><div class="rule-icon">02</div><div class="rule-copy"><strong>Weekly activity</strong><p>Target is 1,500 AP per week. Weekly delta reporting and scheduled checks still need implementation.</p></div><span class="rule-state pending">Partial</span></div>
-          <div class="rule-row"><div class="rule-icon">03</div><div class="rule-copy"><strong>Automatic removal</strong><p>Requires a verified, supported FC Mobile membership-management method.</p></div><span class="rule-state pending">Not connected</span></div>
+          <div class="panel-head"><div><p class="eyebrow">LEAGUE POLICY</p><h3>Activity thresholds</h3></div><span class="tag">Configured</span></div>
+          <div class="rule-row"><div class="rule-icon">01</div><div class="rule-copy"><strong>New-member onboarding</strong><p>At least 500 AP within 2 hours. Overdue records can be flagged for review.</p></div><span class="rule-state">Tracking</span></div>
+          <div class="rule-row"><div class="rule-icon">02</div><div class="rule-copy"><strong>Weekly activity</strong><p>Target: 1,500 AP per week. Weekly AP comparisons and scheduled checks are not implemented yet.</p></div><span class="rule-state pending">In progress</span></div>
+          <div class="rule-row"><div class="rule-icon">03</div><div class="rule-copy"><strong>Automatic removal</strong><p>Needs a verified, supported FC Mobile membership-management connection.</p></div><span class="rule-state pending">Not connected</span></div>
         </section>
       </div>
-      <footer>FCP League Manager 27 · Supabase-backed admin dashboard · No EA credentials stored</footer>
+      <footer><span class="footer-brand">FCP</span> League Manager 27 <span class="footer-sep">·</span> Private admin access <span class="footer-sep">·</span> No EA credentials stored</footer>
     </main>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=20261015b"></script>
 </body>
 </html>
