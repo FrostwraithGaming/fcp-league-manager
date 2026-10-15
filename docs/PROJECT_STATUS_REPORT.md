@@ -17,10 +17,10 @@
 
 ## Verified in this session
 
-- Supabase migration for multi-user workspace/RLS schema applied successfully.
+- Supabase migrations for multi-user workspace/RLS schema, custom rules, monitor updates, and default OVR threshold applied successfully.
 - Workspace-aware monitor migration applied and monitor_league_activity() ran successfully.
 - Database returned one new onboarding alert from the existing member record when the monitor was smoke-tested.
-- Previous JavaScript syntax validation passed and the final auth change adds an initialization guard; final script audit is pending below.
+- Final `app.js` passed JavaScript syntax parsing after the latest change; DOM audit found no missing or duplicate IDs, and both CSS/JS cache-busters are aligned at `20261015i`.
 - Schema inspection confirmed workspace, membership and policy-rule tables exist and have RLS enabled.
 - The workspace-aware monitor reports game_actions_executed: false.
 - No EA password, game OTP, cookie or session token was requested or stored.
