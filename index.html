@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080c18">
+  <title>FCP League Manager 27</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand-mark">F</div>
+      <div><div class="eyebrow">LEAGUE OPERATIONS</div><h1>FCP League Manager <span>27</span></h1></div>
+      <div class="status-pill"><i></i> Dashboard preview</div>
+    </header>
+    <main>
+      <section class="hero">
+        <div><p class="eyebrow">YOUR LEAGUE, AT A GLANCE</p><h2>Stay on top of<br><span>every activity target.</span></h2><p class="sub">A control panel for new-member onboarding and weekly activity rules.</p></div>
+        <div class="hero-symbol" aria-hidden="true">⚡</div>
+      </section>
+      <section class="metrics">
+        <article class="metric"><div class="metric-label">New member target</div><div class="metric-value">500 <small>AP</small></div><div class="metric-note">Within 2 hours of joining</div></article>
+        <article class="metric"><div class="metric-label">Weekly target</div><div class="metric-value">1,500 <small>AP</small></div><div class="metric-note">Each 7-day period</div></article>
+        <article class="metric"><div class="metric-label">Tracked members</div><div class="metric-value" id="memberCount">0</div><div class="metric-note">Demo records only</div></article>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><div><p class="eyebrow">MEMBER MANAGEMENT</p><h3>Member tracker</h3></div><button id="addDemo" class="secondary">Add demo member</button></div>
+        <div class="notice"><strong>Demo mode:</strong> this dashboard does not connect to FC Mobile yet. Members added here are sample records only. Live game access and automatic removal have not been verified.</div>
+        <div class="table-wrap"><table><thead><tr><th>Player</th><th>Join time</th><th>Activity points</th><th>Rule status</th></tr></thead><tbody id="membersBody"><tr class="empty"><td colspan="4">No members yet. Add a demo member to preview the dashboard.</td></tr></tbody></table></div>
+      </section>
+      <section class="panel rules">
+        <div class="panel-head"><div><p class="eyebrow">AUTOMATION RULES</p><h3>Configured thresholds</h3></div><span class="tag">Preview</span></div>
+        <div class="rule-row"><div class="rule-icon">01</div><div class="rule-copy"><strong>New-member onboarding</strong><p>At least 500 activity points within 2 hours of joining.</p></div><span class="rule-state">Configured</span></div>
+        <div class="rule-row"><div class="rule-icon">02</div><div class="rule-copy"><strong>Weekly activity</strong><p>At least 1,500 newly earned activity points per week.</p></div><span class="rule-state">Configured</span></div>
+        <div class="rule-row"><div class="rule-icon">03</div><div class="rule-copy"><strong>Automatic removal</strong><p>Requires a verified, supported FC Mobile membership-management method.</p></div><span class="rule-state pending">Not connected</span></div>
+      </section>
+      <footer>FCP League Manager 27 · Free-tier-first project · No EA credentials requested here</footer>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
