@@ -1,7 +1,7 @@
 # Public Website Update — FCP League Manager
 **Date:** 15 October 2026  
 **Repository:** https://github.com/FrostwraithGaming/fcp-league-manager  
-**Dashboard:** https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015h  
+**Dashboard:** https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015i  
 **Supabase project:** ekfziidavohcdzbypocn
 
 ## Implemented
