@@ -1,64 +1,48 @@
-# FCP League Manager 27
+# FCP League Manager
 
-A private, mobile-friendly FC Mobile league tracking dashboard built with GitHub Pages and Supabase.
+A public, mobile-friendly, multi-workspace FC Mobile league manager with a light UI, built using GitHub Pages and Supabase.
 
-## Current capabilities
+## Public website
 
-- Supabase email/password authentication for the admin workspace.
-- Admin-only row-level security for member records, AP history, settings, and alerts.
-- Manual member entry and AP updates.
-- Browser-based OCR for up to eight league-member screenshots per scan, with review/edit before saving.
-- AP history snapshots stored in Supabase.
-- Onboarding target: 500 AP earned after first tracking, with a two-hour review deadline.
-- Weekly target: 1,500 AP, estimated from saved history snapshots.
-- Supabase scheduled monitoring every 30 minutes.
-- Persistent in-dashboard alert inbox for onboarding shortfalls, weekly shortfalls, and missing snapshot coverage.
-- Optional Discord notifications via a Supabase Vault secret named `discord_webhook_url`.
+- Dashboard: https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015h
+- Sign-in options: Google OAuth or email one-time verification code.
+- CAPTCHA: Cloudflare Turnstile widget hook included.
+- **Before public sign-in works:** finish provider configuration in Supabase/Google Cloud/Cloudflare. See docs/PUBLIC_LAUNCH_SETUP.md.
 
-## Live game connection status
+## Working features
 
-This project does **not** currently have a verified live FC Mobile league/AP data source. Screenshot OCR and manual updates are the supported intake methods for now. Each screenshot must be uploaded by an admin; it is not background monitoring. A live feed still needs to be connected and tested before the project can claim hands-free AP ingestion.
+- Public user flow with Google OAuth and email OTP verification (provider keys and Turnstile secret must be configured in dashboards).
+- A separate league workspace per user, with multiple workspaces available from the selector.
+- Row-level security that limits rosters, activity history, alert inboxes, quota rules, snapshots, and review queues by workspace.
+- Manual member addition, AP snapshots, and editable OVR values.
+- Reviewed browser OCR for up to eight FC Mobile roster screenshots per batch. The screenshots are read on-device and are not uploaded.
+- Grouped roster snapshot records and per-row import outcomes.
+- Configurable onboarding AP target and deadline hours.
+- Configurable weekly, monthly, or custom-hour AP quota.
+- Optional minimum-OVR rule.
+- Bulk candidate builder using AP or OVR criteria.
+- Supabase scheduled monitoring every 30 minutes and a review-and-confirm queue.
+- AP history calculations that use saved snapshots and flag missing data instead of inventing a result.
 
-The tracker timestamps a newly detected member from the first screenshot where they appear, not the official in-game join time. The two-hour target therefore measures activity gained after first tracking unless the admin enters the member at join time.
+## FC Mobile connection and kicks
 
-## Monitoring schedule and logic
+No verified official FC Mobile league-member/AP API or supported membership-removal API has been connected. The account-connection card intentionally does not collect EA passwords or OTPs. The manager website must not be given an EA session token.
 
-- The database monitor runs every 30 minutes.
-- Pending members who reach the configured onboarding threshold are cleared automatically in the tracker.
-- Members still below the onboarding target after the stored deadline receive a one-time alert and are flagged for review.
-- Weekly review runs on Sunday from 8:00 PM Asia/Kolkata time.
-- Weekly AP is estimated from the latest snapshot before the week starts plus in-week snapshots. A counter drop is treated as a weekly reset. If the baseline or in-week snapshot is missing, a data-coverage alert is created rather than presenting a false precision.
-- Alerts are stored in `public.league_alerts`. Optional Discord delivery requires a webhook URL to be saved in Supabase Vault as `discord_webhook_url`. Until that is connected, alerts remain in the dashboard inbox.
-- The monitor never kicks or removes players. Any in-game removal remains a manual administrator decision.
+Current data inputs are reviewed screenshots and manually verified AP/OVR values. The site can create single or bulk removal recommendations, but recommendation approval is not an in-game kick. A manager must perform any permitted in-game action manually and then record completion in the audit queue. Automatic kicking remains disabled until a supported and authorized interface is confirmed.
 
-## Admin and database security
-
-1. Keep public sign-ups disabled in Supabase Authentication settings.
-2. The current existing Auth account was marked with the app metadata role `league_admin` by the monitoring migration. Sign out and back in to refresh the role in your session.
-3. Row-level security checks that app metadata role for every user-facing table. Only trusted admins should have that role.
-4. Keep Row Level Security enabled. Never expose a Supabase service-role/secret key in browser code.
-5. If adding another admin later, assign the `league_admin` app metadata role through a trusted Supabase admin path; do not use public sign-up.
+EA rules and account safety: https://help.ea.com/en/articles/ea-sports-fc/fc-mobile/rules-fc-mobile/
 
 ## Infrastructure
 
 - Frontend: GitHub Pages
-- Database/Auth/Scheduled checks: Supabase
-- Screenshot OCR: Tesseract.js in the browser
-- Optional alerts channel: Discord webhook stored server-side in Supabase Vault
+- Authentication/database: Supabase Auth + PostgreSQL with workspace-scoped RLS
+- Scheduled monitoring: Supabase pg_cron
+- CAPTCHA: Cloudflare Turnstile (requires site key in app.js and secret in Supabase Auth)
+- Screenshot OCR: Tesseract.js, in the browser
+- Optional alert channel: Discord webhook in Supabase Vault (not required for in-dashboard alerts)
 
-## Verification checklist
+## Key setup and security
 
-- [ ] Sign out and sign back in after the admin-role migration.
-- [ ] Upload a clear member-list screenshot and verify all detected names/AP values before saving.
-- [ ] Capture snapshots often enough to support a weekly baseline and in-week comparison.
-- [ ] Connect a Discord webhook in Supabase Vault if external notifications are wanted.
-- [ ] Connect and validate a legitimate live FC Mobile data source before enabling any live-ingestion claim or automatic in-game action.
+Never commit Google OAuth client secrets, Turnstile secrets, Supabase service-role keys, EA credentials, or session tokens. Public browser code should contain only the Supabase publishable key and the public Turnstile site key.
 
-
-## Staged integration and management workflow
-
-- **Data connector:** no verified official FC Mobile endpoint for league rosters or AP was found in the official help material. The current connector is reviewed screenshot OCR; the screenshot is processed locally and is not uploaded as an image. Only reviewed/extracted roster values and snapshot metadata are saved.
-- **Account connection:** the website asks only for its Supabase admin login. Do not enter EA credentials or session tokens in this site; there is no EA account connection in this build.
-- **Cloud processing:** Supabase stores grouped roster snapshots and individual AP history, and the scheduled monitor generates onboarding/weekly shortfall or data-gap alerts.
-- **Management actions:** shortfall alerts produce review recommendations. An admin must approve the recommendation, perform any removal manually in FC Mobile, then confirm completion and enter an audit note. Approval does not execute an in-game action.
-- **Automatic removal:** disabled until a supported, authorized membership-management interface can be verified and tested.
+Start with docs/PUBLIC_LAUNCH_SETUP.md, then review docs/INTEGRATION_STAGES.md.
