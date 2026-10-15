@@ -53,3 +53,12 @@ The tracker timestamps a newly detected member from the first screenshot where t
 - [ ] Capture snapshots often enough to support a weekly baseline and in-week comparison.
 - [ ] Connect a Discord webhook in Supabase Vault if external notifications are wanted.
 - [ ] Connect and validate a legitimate live FC Mobile data source before enabling any live-ingestion claim or automatic in-game action.
+
+
+## Staged integration and management workflow
+
+- **Data connector:** no verified official FC Mobile endpoint for league rosters or AP was found in the official help material. The current connector is reviewed screenshot OCR; the screenshot is processed locally and is not uploaded as an image. Only reviewed/extracted roster values and snapshot metadata are saved.
+- **Account connection:** the website asks only for its Supabase admin login. Do not enter EA credentials or session tokens in this site; there is no EA account connection in this build.
+- **Cloud processing:** Supabase stores grouped roster snapshots and individual AP history, and the scheduled monitor generates onboarding/weekly shortfall or data-gap alerts.
+- **Management actions:** shortfall alerts produce review recommendations. An admin must approve the recommendation, perform any removal manually in FC Mobile, then confirm completion and enter an audit note. Approval does not execute an in-game action.
+- **Automatic removal:** disabled until a supported, authorized membership-management interface can be verified and tested.
