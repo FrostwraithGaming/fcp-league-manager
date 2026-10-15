@@ -4,6 +4,8 @@ const $ = (id) => document.getElementById(id);
 let db = null;
 let allMembers = [];
 let members = [];
+let allHistory = [];
+let allAlerts = [];
 let ocrDrafts = [];
 let rawOcrText = "";
 
@@ -29,29 +31,86 @@ function normalizedName(value) {
   return String(value || "").toLocaleLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 }
 function statusFor(m) {
-  if (m.status === "active") { const earned = Number(m.last_points || 0) - Number(m.initial_points || 0); return earned >= 500 ? ["Onboarding target met", "good"] : ["Active / baseline", "good"]; }
   if (m.status === "removed") return ["Removed", "bad"];
-  const joined = new Date(m.joined_at).getTime();
-  const elapsed = Number.isFinite(joined) ? (Date.now() - joined) / 3600000 : 0;
-  const earnedSinceTracking = Math.max(0, Number(m.last_points || 0) - Number(m.initial_points || 0));
-  if (earnedSinceTracking >= 500) return ["Onboarding target met", "good"];
-  if (elapsed >= 2) return ["Needs review", "bad"];
+  const earned = Math.max(0, Number(m.last_points || 0) - Number(m.initial_points || 0));
+  if (m.status === "active") return earned >= 500 ? ["Onboarding target met", "good"] : ["Active / baseline", "good"];
+  if (earned >= 500) return ["Onboarding target met", "good"];
+  const deadline = new Date(m.initial_deadline || (new Date(m.joined_at).getTime() + 2 * 3600000)).getTime();
+  if (Number.isFinite(deadline) && Date.now() >= deadline) return ["Needs review", "bad"];
   return ["Within 2-hour window", ""];
+}
+function indiaWeekStart(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(now);
+  const p = Object.fromEntries(parts.map(item => [item.type, item.value]));
+  const date = p.year + "-" + p.month + "-" + p.day;
+  const midnight = new Date(date + "T00:00:00+05:30");
+  const day = new Date(date + "T00:00:00Z").getUTCDay();
+  midnight.setTime(midnight.getTime() - ((day + 6) % 7) * 86400000);
+  return midnight;
+}
+function weeklyPointsFor(memberId) {
+  const weekStart = indiaWeekStart().getTime();
+  const rows = allHistory.filter(h => String(h.member_id) === String(memberId))
+    .sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at) || Number(a.id) - Number(b.id));
+  const before = rows.filter(h => new Date(h.recorded_at).getTime() <= weekStart);
+  const baseline = before[before.length - 1];
+  if (!baseline) return null;
+  const baselineTime = new Date(baseline.recorded_at).getTime();
+  if (weekStart - baselineTime > 8 * 86400000) return null;
+  const weekRows = rows.filter(h => {
+    const t = new Date(h.recorded_at).getTime();
+    return t > weekStart && t <= Date.now();
+  });
+  if (!weekRows.length) return null;
+  let previous = Number(baseline.activity_points || 0);
+  let earned = 0;
+  for (const row of weekRows) {
+    const points = Math.max(0, Number(row.activity_points || 0));
+    earned += points >= previous ? points - previous : points;
+    previous = points;
+  }
+  return earned;
 }
 function render() {
   const tbody = $("membersBody");
   if ($("memberCount")) $("memberCount").textContent = members.length;
+  if ($("openAlertCount")) $("openAlertCount").textContent = allAlerts.filter(a => !a.read_at).length;
   if (!tbody) return;
   if (!members.length) {
-    tbody.innerHTML = '<tr class="empty"><td colspan="5">No saved members yet. Add a member or import a roster screenshot.</td></tr>';
+    tbody.innerHTML = '<tr class="empty"><td colspan="6">No saved members yet. Add a member or import a roster screenshot.</td></tr>';
     return;
   }
   tbody.innerHTML = members.map(m => {
     const [label, cls] = statusFor(m);
+    const weekly = weeklyPointsFor(m.id);
+    const weeklyLabel = weekly === null ? "Awaiting snapshot" : weekly.toLocaleString() + " AP";
+    const weeklyClass = weekly === null ? "" : (weekly >= 1500 ? "good" : "");
     return '<tr><td><strong>' + safe(m.player_name) + '</strong></td><td>' +
       safe(new Date(m.joined_at).toLocaleString()) + '</td><td>' +
-      safe(m.last_points ?? 0) + ' AP</td><td><span class="status-text ' + cls + '">' +
+      safe(m.last_points ?? 0) + ' AP</td><td><span class="status-text ' + weeklyClass + '">' +
+      safe(weeklyLabel) + '</span></td><td><span class="status-text ' + cls + '">' +
       label + '</span></td><td><button class="tiny" type="button" data-points="' + Number(m.id) + '">Update AP</button></td></tr>';
+  }).join("");
+}
+function renderAlerts() {
+  const tbody = $("alertsBody");
+  if (!tbody) return;
+  if (!allAlerts.length) {
+    tbody.innerHTML = '<tr class="empty"><td colspan="4">No alerts yet. Scheduled checks will add alerts here when a rule needs attention.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allAlerts.map(alert => {
+    const member = allMembers.find(m => String(m.id) === String(alert.member_id));
+    const state = alert.read_at ? "Read" : "Unread";
+    const type = alert.alert_type === "onboarding_shortfall" ? "Onboarding" :
+      alert.alert_type === "weekly_shortfall" ? "Weekly target" : "Data coverage";
+    return '<tr><td>' + safe(new Date(alert.created_at).toLocaleString()) + '</td><td><strong>' +
+      safe(alert.title) + '</strong><div class="alert-type">' + safe(type) + '</div></td><td>' +
+      safe(member?.player_name || "League member") + '</td><td><span class="status-text ' +
+      (alert.read_at ? "" : "bad") + '">' + state + '</span> ' +
+      (alert.read_at ? "" : '<button class="tiny" type="button" data-alert-read="' + Number(alert.id) + '">Mark read</button>') + '</td></tr>';
   }).join("");
 }
 async function loadMembers() {
@@ -59,7 +118,18 @@ async function loadMembers() {
   if (error) throw error;
   allMembers = data || [];
   members = allMembers.filter(m => m.status !== "removed");
+  const historySince = new Date(Date.now() - 16 * 86400000).toISOString();
+  const [historyResult, alertResult] = await Promise.all([
+    db.from("activity_history").select("id,member_id,activity_points,recorded_at")
+      .gte("recorded_at", historySince).order("recorded_at", {ascending:true}),
+    db.from("league_alerts").select("*").order("created_at", {ascending:false}).limit(25)
+  ]);
+  if (historyResult.error) throw historyResult.error;
+  if (alertResult.error) throw alertResult.error;
+  allHistory = historyResult.data || [];
+  allAlerts = alertResult.data || [];
   render();
+  renderAlerts();
 }
 function readableAuthError(error) {
   const message = String(error?.message || "");
@@ -271,11 +341,11 @@ async function upsertOCRRows() {
     let memberId;
     if (existing) {
       const elapsed = (Date.now()-new Date(existing.joined_at).getTime())/3600000;
-      const earned = points-Number(existing.initial_points||0);
+      const earned = Math.max(0, points-Number(existing.initial_points||0));
       let nextStatus = existing.status;
       if (mode === "baseline") nextStatus = "active";
       else if (earned >= 500) nextStatus = "active";
-      else if (nextStatus !== "active" && elapsed >= 2) nextStatus = "review";
+      else if (nextStatus !== "active" && Date.now() >= new Date(existing.initial_deadline || (new Date(existing.joined_at).getTime()+7200000)).getTime()) nextStatus = "review";
       const {error} = await db.from("league_members").update({
         last_points:points,last_checked_at:scannedAt,status:nextStatus
       }).eq("id",existing.id);
@@ -343,6 +413,28 @@ async function init() {
     }catch(e){showMessage("Could not save the member. Details: "+e.message,true);}
     finally{button.disabled=false;}
   });
+  $("alertsBody").addEventListener("click", async event => {
+    const button = event.target.closest("button[data-alert-read]");
+    if (!button) return;
+    button.disabled = true;
+    try {
+      const { error } = await db.from("league_alerts").update({read_at:new Date().toISOString()}).eq("id", button.dataset.alertRead);
+      if (error) throw error;
+      await loadMembers();
+      showMessage("Alert marked as read.");
+    } catch (e) {
+      showMessage("Could not update the alert. Details: " + e.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  });
+  const refreshButton = $("refreshDashboard");
+  if (refreshButton) refreshButton.addEventListener("click", async () => {
+    refreshButton.disabled = true;
+    try { await loadMembers(); showMessage("Dashboard refreshed."); }
+    catch (e) { showMessage("Refresh failed: " + e.message, true); }
+    finally { refreshButton.disabled = false; }
+  });
   $("membersBody").addEventListener("click",async event=>{
     const button=event.target.closest("button[data-points]");if(!button)return;
     const member=members.find(m=>String(m.id)===button.dataset.points);if(!member)return;
@@ -352,8 +444,8 @@ async function init() {
     if(!Number.isInteger(points)||points<0){showMessage("Enter a whole number of 0 or more.",true);return;}
     button.disabled=true;
     try{
-      const earned=points-Number(member.initial_points||0);
-      const nextStatus=earned>=500?"active":(member.status!=="active"&&Date.now()>=new Date(member.initial_deadline).getTime()?"review":member.status);
+      const earned=Math.max(0, points-Number(member.initial_points||0));
+      const nextStatus=earned>=500?"active":(member.status!=="active"&&Date.now()>=new Date(member.initial_deadline || (new Date(member.joined_at).getTime()+7200000)).getTime()?"review":member.status);
       const {error}=await db.from("league_members").update({last_points:points,last_checked_at:new Date().toISOString(),status:nextStatus}).eq("id",member.id);
       if(error)throw error;
       const hist=await db.from("activity_history").insert({member_id:member.id,activity_points:points});
