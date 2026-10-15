@@ -466,17 +466,24 @@ async function saveOcrSnapshot() {
   const mode=$("syncMode").value;
   const button=$("syncSelected");
   button.disabled=true;button.textContent="Saving snapshot…";
-  let snapshotId=null,created=0,updated=0,skipped=0,failed=0;
-  const errors=[],snapshotRows=[],scannedAt=new Date().toISOString();
+  let snapshotId=null,created=0,updated=0,skipped=ocrDrafts.filter(r=>!r.selected).length,failed=0;
+  const errors=[],scannedAt=new Date().toISOString();
+  const snapshotRows=ocrDrafts.filter(r=>!r.selected).map(r=>({
+    snapshot_id:null,member_id:null,player_name:String(r.name||"Unnamed OCR row").trim()||"Unnamed OCR row",
+    activity_points:Number.isInteger(Number(r.points))&&Number(r.points)>=0?Number(r.points):0,
+    ocr_confidence:Number.isFinite(Number(r.confidence))?Math.max(0,Math.min(100,Math.round(Number(r.confidence)))):null,
+    outcome:"skipped",details:"Unchecked during admin review; no roster or AP history was changed."
+  }));
   try {
     const {data:userData,error:userError}=await db.auth.getUser();
     if(userError) throw userError;
     const {data:snapshot,error:snapshotError}=await db.from("league_roster_snapshots").insert({
       workspace_id:activeWorkspaceId,scanned_at:scannedAt,source:"reviewed_screenshot_ocr",
-      uploaded_by:userData.user?.id||null,detected_rows:selected.length,status:"processing"
+      uploaded_by:userData.user?.id||null,detected_rows:ocrDrafts.length,status:"processing"
     }).select("id").single();
     if(snapshotError) throw snapshotError;
     snapshotId=snapshot.id;
+    for(const skippedRow of snapshotRows) skippedRow.snapshot_id=snapshotId;
     for(const row of selected) {
       const name=String(row.name).trim().replace(/\s+/g," ");
       const points=Number(row.points);
