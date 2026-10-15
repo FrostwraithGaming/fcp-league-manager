@@ -18,6 +18,8 @@ let rawOcrText = "";
 let captchaToken = "";
 let turnstileWidgetId = null;
 let initializedUserId = null;
+let initializingUserId = null;
+let initUserPromise = null;
 
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
@@ -289,12 +291,20 @@ async function refreshWorkspace() {
 async function initUser(user) {
   if(!user) return;
   if(initializedUserId===user.id && activeWorkspaceId) { setAuthVisibility(user); return; }
-  initializedUserId=user.id;
-  currentUser=user;
-  setAuthVisibility(user);
-  $("userAvatar").textContent=String(user.user_metadata?.full_name||user.email||"U").trim().slice(0,1).toUpperCase();
-  try { await loadWorkspaceContext(); await refreshWorkspace(); }
-  catch(e) { showMessage("Signed in, but workspace initialization failed: " + (e.message||e),true); }
+  if(initializingUserId===user.id && initUserPromise) return initUserPromise;
+  initializingUserId=user.id;
+  initUserPromise=(async()=>{
+    initializedUserId=user.id;
+    currentUser=user;
+    setAuthVisibility(user);
+    $("userAvatar").textContent=String(user.user_metadata?.full_name||user.email||"U").trim().slice(0,1).toUpperCase();
+    try { await loadWorkspaceContext(); await refreshWorkspace(); }
+    catch(e) { showMessage("Signed in, but workspace initialization failed: " + (e.message||e),true); }
+    finally {
+      if(initializingUserId===user.id) { initializingUserId=null; initUserPromise=null; }
+    }
+  })();
+  return initUserPromise;
 }
 function requireCaptcha() {
   if(TURNSTILE_SITE_KEY==="SET_CLOUDFLARE_TURNSTILE_SITE_KEY" || !turnstileWidgetId) {
