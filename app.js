@@ -38,6 +38,7 @@ function setAuthVisibility(user) {
   $("userLabel").textContent = user ? (user.user_metadata?.full_name || user.email || "Signed in") : "";
   $("userEmail").textContent = user?.email || "";
   $("signedInTools").hidden = !user;
+  $("signOut").hidden = !user;
 }
 function normalizedName(value) {
   return String(value || "").toLocaleLowerCase().normalize("NFKD")
@@ -65,7 +66,9 @@ function periodStartFor(rule, now = new Date()) {
     return new Date(p.year + "-" + p.month + "-01T00:00:00+05:30");
   }
   if (rule.period_type === "custom") {
-    return new Date(now.getTime() - Number(rule.duration_hours || 24) * 3600000);
+    const windowMs = Number(rule.duration_hours || 24) * 3600000;
+    const closedWindowStart = Math.floor(now.getTime() / windowMs) * windowMs - windowMs;
+    return new Date(closedWindowStart);
   }
   return indiaWeekStart(now);
 }
@@ -80,9 +83,10 @@ function pointsInWindow(memberId, rule, now = new Date()) {
   const maxAge = rule?.period_type === "monthly" ? 32*86400000 :
     rule?.period_type === "weekly" ? 8*86400000 : Math.max(7*86400000,Number(rule?.duration_hours||24)*2*3600000);
   if (start-baselineAt > maxAge) return null;
+  const windowEnd = rule?.period_type === "custom" ? start + Number(rule.duration_hours || 24) * 3600000 : now.getTime();
   const windowRows = rows.filter(h => {
     const t = new Date(h.recorded_at).getTime();
-    return t > start && t <= now.getTime();
+    return t > start && t <= Math.min(now.getTime(), windowEnd);
   });
   if (!windowRows.length) return null;
   let previous = Number(baseline.activity_points || 0);
@@ -109,6 +113,8 @@ function statusFor(member) {
   const target = Number(onboarding?.target_ap ?? 500);
   const hours = Number(onboarding?.duration_hours ?? 2);
   const earned = Math.max(0,Number(member.last_points||0)-Number(member.initial_points||0));
+  if (member.status === "review") return ["Needs review","bad"];
+  if (member.status === "active") return earned >= target ? ["Onboarding met","good"] : ["Tracking active","good"];
   if (earned >= target) return ["Onboarding met","good"];
   const deadline = new Date(member.joined_at).getTime() + hours*3600000;
   if (Date.now() >= deadline) return ["Needs review","bad"];
