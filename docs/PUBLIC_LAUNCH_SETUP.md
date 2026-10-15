@@ -9,6 +9,10 @@
 
 **Provider setup is still required before public authentication can work.** Provider client secrets must be entered into provider dashboards, never into GitHub or browser JavaScript.
 
+## 0. Enable public email sign-up
+
+Open Supabase Dashboard → Authentication → Sign In / Providers or User Signups settings and enable new user sign-ups for Email OTP. This must be enabled for public people to create their own accounts. Do not grant existing users workspace ownership or admin rights across other users' workspaces; the workspace creation flow grants ownership only to the current signed-in user. Enable rate limits and CAPTCHA before sharing the site publicly.
+
 ## 1. Supabase Auth URLs
 
 Open Supabase Dashboard → Authentication → URL Configuration.
@@ -52,7 +56,7 @@ The UI is deliberately blocked from email sign-up until the site key is set. To 
 
 Official guide: https://supabase.com/docs/guides/auth/auth-captcha
 
-The browser only contains the Turnstile site key, which is public by design. The Turnstile secret belongs in Supabase Auth settings. The email OTP request sends the returned CAPTCHA token to Supabase. Google sign-in is gated by the widget in the UI; verify Google sign-in and bot protection in the real project before treating CAPTCHA as production-enforced across all auth methods.
+The browser only contains the Turnstile site key, which is public by design. The Turnstile secret belongs in Supabase Auth settings. The email OTP request sends the returned CAPTCHA token to Supabase. The Google button is gated by the widget client-side; do not assume the browser-only gate alone provides server-side Google CAPTCHA enforcement. Verify Google sign-in, bot protection, rate limits, and provider settings in the real project before treating the whole auth surface as production-protected.
 
 ## 5. Public access and data isolation
 
