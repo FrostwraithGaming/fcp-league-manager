@@ -1,19 +1,24 @@
 # FCP League Manager 27
 
-A GitHub Pages dashboard for tracking league members and activity points.
+A GitHub Pages dashboard using Supabase for saved member records and activity history.
 
-## Supabase setup
+## Admin and database setup
 
-1. In Supabase, open **Authentication → Sign In / Providers** (or Authentication settings) and turn off public sign-ups.
-2. Open **Authentication → Users** and create an admin user with your own email and a strong password. Do not put the password in GitHub.
-3. Open **SQL Editor**, open the `supabase-setup.sql` file in this repository, copy its contents into the editor, and run it.
-4. Open the published GitHub Pages site and sign in using that admin account.
-5. Add members and use **Update AP** to save manual point snapshots.
+1. Keep public sign-ups disabled in Supabase Authentication settings.
+2. Create only trusted admin users under Authentication → Users.
+3. Apply the RLS policies in `supabase-setup.sql` if not already applied.
+4. Sign in at the GitHub Pages site.
+
+## Activity intake
+
+The dashboard supports browser-side OCR from screenshots of the FC Mobile League → Members screen. Choose screenshots, scan, review/edit detected rows, and save selected readings to Supabase. OCR is not guaranteed to be accurate; always check the names and AP before saving. For the first import, choose **First scan — existing roster**. For later scans choose **Routine scan — detect new members**.
+
+OCR runs in the browser through Tesseract.js. This is not a live game connection, does not use EA account credentials, and does not keep a phone or PC running in the background. A manual screenshot upload is required for each refresh.
 
 ## Current limitations
 
-- Member names and manually entered AP snapshots are saved in Supabase.
-- AP is not read automatically from FC Mobile.
-- Weekly AP calculations, scheduled alerts, and automatic kicking are not yet implemented.
-- Automatic game access requires a verified, supported integration.
-- The Supabase publishable key in `app.js` is designed for browser use. Keep Row Level Security enabled, disable public sign-ups, and never expose a service-role/secret key.
+- No verified official FC Mobile API for live league-member/AP polling was found.
+- Newly detected member onboarding time is based on first appearance in a screenshot, not an official game join event.
+- Weekly AP-delta summaries and scheduled reminders are not yet implemented.
+- The website does not automatically remove/kick anyone. A supported integration would be required for automatic in-game actions.
+- Keep Row Level Security enabled and never expose a Supabase service-role/secret key in browser code.
