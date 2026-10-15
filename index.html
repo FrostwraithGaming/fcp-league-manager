@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080d18">
   <meta name="description" content="FCP League Manager — secure league member and activity tracking.">
   <title>FCP League Manager 27</title>
-  <link rel="stylesheet" href="styles.css?v=20261015b">
+  <link rel="stylesheet" href="styles.css?v=20261015c">
 </head>
 <body>
   <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -24,7 +24,7 @@
         <div class="hero-copy">
           <p class="eyebrow">YOUR LEAGUE. UNDER CONTROL.</p>
           <h2>Every member.<br><span>Every activity target.</span></h2>
-          <p class="sub">A clear, secure workspace for tracking onboarding and weekly activity.</p>
+          <p class="sub">A clear workspace for onboarding, weekly activity, and league roster tracking.</p>
         </div>
         <div class="hero-symbol" aria-hidden="true"><span>↗</span></div>
       </section>
@@ -50,30 +50,76 @@
       <div id="appContent" hidden>
         <div class="account-row"><div><span class="eyebrow">SIGNED IN AS</span><div id="accountLabel" class="account-email"></div></div><button id="signOut" class="secondary" type="button">Sign out</button></div>
         <section class="metrics">
-          <article class="metric"><div class="metric-top"><span class="metric-label">New member target</span><span class="metric-icon">01</span></div><div class="metric-value">500 <small>AP</small></div><div class="metric-note">Within 2 hours of joining</div></article>
-          <article class="metric"><div class="metric-top"><span class="metric-label">Weekly target</span><span class="metric-icon">02</span></div><div class="metric-value">1,500 <small>AP</small></div><div class="metric-note">Each 7-day period</div></article>
+          <article class="metric"><div class="metric-top"><span class="metric-label">New member target</span><span class="metric-icon">01</span></div><div class="metric-value">500 <small>AP</small></div><div class="metric-note">Earned within 2 hours of first tracking</div></article>
+          <article class="metric"><div class="metric-top"><span class="metric-label">Weekly target</span><span class="metric-icon">02</span></div><div class="metric-value">1,500 <small>AP</small></div><div class="metric-note">Per 7-day period</div></article>
           <article class="metric"><div class="metric-top"><span class="metric-label">Tracked members</span><span class="metric-icon">03</span></div><div class="metric-value" id="memberCount">0</div><div class="metric-note">Saved in your database</div></article>
         </section>
+
+        <section class="panel scan-panel">
+          <div class="panel-head">
+            <div><p class="eyebrow">ROSTER SYNC</p><h3>Recognize AP from screenshots</h3></div>
+            <span class="tag">Browser OCR</span>
+          </div>
+          <p class="panel-sub scan-intro">Upload one or more screenshots of the FC Mobile League → Members screen. The browser will read the visible names and AP, then let you review before saving.</p>
+          <div class="notice"><strong>No live game connection:</strong> this does not sign in to FC Mobile, run a bot, or read the game in the background. OCR runs after you select screenshots.</div>
+          <form id="scanForm" class="scan-form">
+            <label for="rosterImages" class="upload-zone">
+              <span class="upload-icon">↑</span>
+              <strong>Choose league screenshots</strong>
+              <span>Tap to choose images from your phone · up to 8 images</span>
+              <input id="rosterImages" type="file" accept="image/*" multiple required>
+            </label>
+            <label for="syncMode" class="mode-label">Import mode
+              <select id="syncMode">
+                <option value="baseline">First scan — existing roster</option>
+                <option value="refresh">Routine scan — detect new members</option>
+              </select>
+            </label>
+            <p class="mode-help">Use “First scan” only for your initial roster import. Later, select “Routine scan” so newly detected names start their own tracking window.</p>
+            <button id="scanButton" class="primary" type="submit"><span>Scan screenshots</span><span aria-hidden="true">⌕</span></button>
+          </form>
+          <div id="ocrProgressBox" class="ocr-progress-box" hidden>
+            <div class="progress-head"><span id="ocrStatus">Preparing OCR…</span><span id="ocrPercent">0%</span></div>
+            <progress id="ocrProgress" max="100" value="0"></progress>
+          </div>
+          <div id="ocrReview" hidden>
+            <div class="review-head"><div><p class="eyebrow">CHECK BEFORE SAVING</p><h4 id="ocrResultTitle">Detected rows</h4></div><span id="ocrSelectedCount" class="count-pill">0 selected</span></div>
+            <p class="mode-help">OCR can misread stylized player names or numbers. Edit any incorrect name/AP and untick rows that are wrong before syncing.</p>
+            <div class="table-wrap ocr-table-wrap">
+              <table class="ocr-table">
+                <thead><tr><th>USE</th><th>PLAYER NAME</th><th>AP</th><th>CONFIDENCE</th></tr></thead>
+                <tbody id="ocrPreviewBody"><tr class="empty"><td colspan="4">No scan results yet.</td></tr></tbody>
+              </table>
+            </div>
+            <details class="raw-details"><summary>Show raw OCR text for troubleshooting</summary><pre id="ocrRaw"></pre></details>
+            <div class="review-actions">
+              <button id="syncSelected" class="primary" type="button">Save selected to Supabase <span aria-hidden="true">→</span></button>
+              <button id="discardScan" class="secondary" type="button">Discard scan</button>
+            </div>
+          </div>
+        </section>
+
         <section class="panel">
           <div class="panel-head"><div><p class="eyebrow">MEMBER MANAGEMENT</p><h3>Member tracker</h3></div></div>
-          <div class="notice"><strong>Current mode: manual AP entry.</strong> Member records and snapshots are saved to Supabase. The site is not yet connected to live FC Mobile data or automatic kicking.</div>
+          <div class="notice"><strong>Saved to Supabase.</strong> Screenshot sync stores each AP reading in activity history. New member detection is based on first appearance in a scan, not an official in-game join event.</div>
           <form id="addMemberForm" class="add-row">
-            <label for="playerName">Add a league member</label>
+            <label for="playerName">Add a league member manually</label>
             <div class="add-controls"><input id="playerName" maxlength="80" required placeholder="Enter player name"><button class="primary" type="submit">Add member <span aria-hidden="true">+</span></button></div>
           </form>
-          <div class="table-wrap"><table><thead><tr><th>PLAYER</th><th>JOINED</th><th>LATEST AP</th><th>ONBOARDING STATUS</th><th>ACTION</th></tr></thead><tbody id="membersBody"><tr class="empty"><td colspan="5">Loading saved members…</td></tr></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>PLAYER</th><th>FIRST TRACKED</th><th>LATEST AP</th><th>ONBOARDING STATUS</th><th>ACTION</th></tr></thead><tbody id="membersBody"><tr class="empty"><td colspan="5">Loading saved members…</td></tr></tbody></table></div>
         </section>
         <section class="panel rules">
-          <div class="panel-head"><div><p class="eyebrow">LEAGUE POLICY</p><h3>Activity thresholds</h3></div><span class="tag">Configured</span></div>
-          <div class="rule-row"><div class="rule-icon">01</div><div class="rule-copy"><strong>New-member onboarding</strong><p>At least 500 AP within 2 hours. Overdue records can be flagged for review.</p></div><span class="rule-state">Tracking</span></div>
-          <div class="rule-row"><div class="rule-icon">02</div><div class="rule-copy"><strong>Weekly activity</strong><p>Target: 1,500 AP per week. Weekly AP comparisons and scheduled checks are not implemented yet.</p></div><span class="rule-state pending">In progress</span></div>
-          <div class="rule-row"><div class="rule-icon">03</div><div class="rule-copy"><strong>Automatic removal</strong><p>Needs a verified, supported FC Mobile membership-management connection.</p></div><span class="rule-state pending">Not connected</span></div>
+          <div class="panel-head"><div><p class="eyebrow">LEAGUE POLICY</p><h3>Activity thresholds</h3></div><span class="tag">Tracking configured</span></div>
+          <div class="rule-row"><div class="rule-icon">01</div><div class="rule-copy"><strong>New-member onboarding</strong><p>500 AP earned after first tracking, within 2 hours. New names are flagged for review if the window expires.</p></div><span class="rule-state">Tracked</span></div>
+          <div class="rule-row"><div class="rule-icon">02</div><div class="rule-copy"><strong>Weekly activity</strong><p>Target: 1,500 AP per 7-day period. Weekly-delta display and scheduled alerts are the next software milestone.</p></div><span class="rule-state pending">In progress</span></div>
+          <div class="rule-row"><div class="rule-icon">03</div><div class="rule-copy"><strong>Automatic removal</strong><p>Requires a verified, supported FC Mobile membership-management method; OCR will not kick anyone.</p></div><span class="rule-state pending">Not connected</span></div>
         </section>
       </div>
       <footer><span class="footer-brand">FCP</span> League Manager 27 <span class="footer-sep">·</span> Private admin access <span class="footer-sep">·</span> No EA credentials stored</footer>
     </main>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=20261015b"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="app.js?v=20261015c"></script>
 </body>
 </html>
