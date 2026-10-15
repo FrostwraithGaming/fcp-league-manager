@@ -4,7 +4,7 @@
 
 Follow docs/PUBLIC_LAUNCH_SETUP.md for Google OAuth, email one-time codes, Turnstile CAPTCHA, public redirects, SMTP, and pre-launch smoke tests.
 
-Dashboard: https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015h
+Dashboard: https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015i
 
 ## Current user workflow
 
