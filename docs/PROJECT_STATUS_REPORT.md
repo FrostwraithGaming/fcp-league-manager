@@ -23,7 +23,7 @@ Core cloud monitoring and dashboard support have been implemented. The remaining
 
 - Supabase confirms `fcp-league-monitor` exists and is active on schedule `*/30 * * * *`.
 - Manual monitor invocation ran successfully and returned a JSON summary.
-- That smoke test placed one existing member record into review and created one persistent “Onboarding target missed” alert; no member rows were deleted.
+- That smoke test left one existing member record in review and created one persistent “Onboarding target missed” alert; no member rows were deleted.
 - Supabase confirmed one Auth account and one account with the admin role.
 - RLS policy inspection confirmed the role check on all four user-facing tables.
 - Updated `app.js` passed JavaScript syntax parsing; HTML audit found no missing/duplicate DOM IDs referenced by the script.
