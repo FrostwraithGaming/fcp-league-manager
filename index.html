@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080d18">
   <meta name="description" content="FCP League Manager — secure league member and activity tracking.">
   <title>FCP League Manager 27</title>
-  <link rel="stylesheet" href="styles.css?v=20261015d">
+  <link rel="stylesheet" href="styles.css?v=20261015e">
 </head>
 <body>
   <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -61,7 +61,7 @@
             <div><p class="eyebrow">ROSTER SYNC</p><h3>Recognize AP from screenshots</h3></div>
             <span class="tag">Browser OCR</span>
           </div>
-          <p class="panel-sub scan-intro">Upload one or more screenshots of the FC Mobile League → Members screen. The browser will read the visible names and AP, then let you review before saving.</p>
+          <p class="panel-sub scan-intro">Upload one or more screenshots of the FC Mobile League → Members screen. The browser reads the visible names and AP, then lets you review before saving. The screenshot stays on your device; reviewed roster values and snapshot metadata are saved to Supabase.</p>
           <div class="notice"><strong>No live game connection:</strong> this does not sign in to FC Mobile, run a bot, or read the game in the background. OCR runs after you select screenshots.</div>
           <form id="scanForm" class="scan-form">
             <label for="rosterImages" class="upload-zone">
@@ -102,12 +102,33 @@
 
         <section class="panel">
           <div class="panel-head"><div><p class="eyebrow">MEMBER MANAGEMENT</p><h3>Member tracker</h3></div><button id="refreshDashboard" class="secondary" type="button">Refresh data</button></div>
-          <div class="notice"><strong>Saved to Supabase.</strong> Screenshot sync stores each AP reading in activity history. New member detection is based on first appearance in a scan, not an official in-game join event.</div>
+          <div class="notice"><strong>Saved to Supabase.</strong> Each reviewed screenshot batch has a grouped roster-snapshot record plus per-member AP history. New member detection is based on first appearance in a scan, not an official in-game join event. Screenshot image files are not uploaded.</div>
           <form id="addMemberForm" class="add-row">
             <label for="playerName">Add a league member manually</label>
             <div class="add-controls"><input id="playerName" maxlength="80" required placeholder="Enter player name"><button class="primary" type="submit">Add member <span aria-hidden="true">+</span></button></div>
           </form>
           <div class="table-wrap"><table><thead><tr><th>PLAYER</th><th>FIRST TRACKED</th><th>LATEST AP</th><th>EST. AP GAIN THIS WEEK</th><th>ONBOARDING STATUS</th><th>ACTION</th></tr></thead><tbody id="membersBody"><tr class="empty"><td colspan="6">Loading saved members…</td></tr></tbody></table></div>
+        </section>
+
+        <section class="panel snapshot-panel">
+          <div class="panel-head"><div><p class="eyebrow">INGESTION AUDIT</p><h3>Saved roster snapshots</h3></div><span class="tag">Supabase history</span></div>
+          <p class="panel-sub alert-intro">Each reviewed screenshot batch is stored as one snapshot, with detected, saved, skipped, and failed row counts. Raw screenshot files remain on your device.</p>
+          <div class="table-wrap">
+            <table class="snapshot-table">
+              <thead><tr><th>SCANNED AT</th><th>SOURCE</th><th>REVIEWED ROWS</th><th>SAVED</th><th>SKIPPED</th><th>STATUS / FAILURES</th></tr></thead>
+              <tbody id="snapshotsBody"><tr class="empty"><td colspan="6">Loading snapshots…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel action-review-panel">
+          <div class="panel-head"><div><p class="eyebrow">ADMIN DECISION GATE</p><h3>Removal recommendations</h3></div><span class="tag">Human confirmation</span></div>
+          <p class="panel-sub alert-intro">Onboarding and weekly shortfall alerts can create a recommendation for review. Approving only records your decision; it does not kick anyone. After you remove a member manually inside FC Mobile, confirm completion here so the tracker can mark that member removed. The app will not automate game actions unless a supported method is verified.</p>
+          <div class="table-wrap">
+            <table class="action-review-table">
+              <thead><tr><th>PROPOSED</th><th>MEMBER</th><th>REASON</th><th>REVIEW STATUS</th><th>ADMIN ACTION</th></tr></thead>
+              <tbody id="actionReviewsBody"><tr class="empty"><td colspan="5">Loading recommendations…</td></tr></tbody>
+            </table>
+          </div>
         </section>
         <section class="panel alert-panel">
           <div class="panel-head">
@@ -134,6 +155,6 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="app.js?v=20261015d"></script>
+  <script src="app.js?v=20261015e"></script>
 </body>
 </html>
