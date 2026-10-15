@@ -1,42 +1,49 @@
-# Project Status Report — FCP League Manager 27
+# Public Website Update — FCP League Manager
 **Date:** 15 October 2026  
 **Repository:** https://github.com/FrostwraithGaming/fcp-league-manager  
-**Dashboard:** https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015f  
+**Dashboard:** https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015h  
 **Supabase project:** ekfziidavohcdzbypocn
 
-## What is implemented
+## Implemented
 
-- Supabase-authenticated admin dashboard. Browser code contains only the Supabase publishable key; it does not contain an EA password, EA session token, service-role key, or game cookie.
-- Reviewed screenshot OCR intake. The admin selects up to eight images, reviews/edits names and AP, and explicitly selects rows before saving.
-- New grouped roster snapshot tables: a snapshot header for each screenshot batch plus one row per reviewed member/AP and its import result. The screenshot image itself remains on the user's device and is not uploaded.
-- Existing per-member AP history remains the input to AP calculations.
-- Scheduled cloud monitoring remains active every 30 minutes, including onboarding (500 AP within two hours of first tracking) and weekly (1,500 AP) target alerts. Weekly checks produce a data-gap alert if snapshots are insufficient.
-- Added a manual-action review queue. Onboarding/weekly shortfall alerts generate a removal recommendation. Admin approval is an audited decision only; it does not call the game. After an admin removes the player manually in FC Mobile, they can confirm completion with an audit note, and the tracker then marks that member removed.
-- Added row-level security to the snapshot tables and a read-only RLS policy for action reviews. Approve/decline/complete operations run through server-side database functions that check the league_admin app-metadata role and enforce allowed status transitions.
-- Added integration-stage and migration documentation to the repository.
+- Replaced the dark single-admin dashboard with a responsive light-theme public website.
+- Added Google OAuth and email OTP verification flows, plus Cloudflare Turnstile frontend integration hooks.
+- Added separate workspaces for multiple users and additional workspaces per user.
+- Added workspace-scoped row-level security and tenant-aware database reads/writes.
+- Added configurable onboarding AP target + time limit, weekly/monthly/custom-hour quota, and optional minimum OVR policy.
+- Added roster import review, grouped snapshots, AP history, manual AP/OVR updates, alerts, bulk recommendation creation, and the action-review queue.
+- Updated the cloud monitor to evaluate workspace rules every 30 minutes.
+- Committed new Supabase migrations to the repository for workspace isolation, rule configuration, monitoring, and access grants.
 
-## Verification performed
+## Verified in this session
 
-- Browser JavaScript syntax parsed successfully using a JavaScript parser.
-- DOM audit found no missing or duplicate element IDs used by app.js.
-- Supabase confirms all seven data tables relevant to this dashboard have RLS enabled.
-- Supabase confirms the new snapshot tables and action-review table exist, and one existing shortfall review item was backfilled.
-- Supabase confirms one active fcp-league-monitor cron job remains scheduled every 30 minutes.
-- Existing security-advisor warning about leaked-password protection being disabled remains. The advisor also flags two SECURITY DEFINER RPCs as generally callable by authenticated users; those calls are intentional for this workflow and explicitly check the app_metadata league_admin claim before changing review status. Keep the admin claim restricted to trusted accounts.
-- No real FC Mobile screenshot was available in this session, so OCR accuracy on the user's actual display remains unverified.
+- Supabase migration for multi-user workspace/RLS schema applied successfully.
+- Workspace-aware monitor migration applied and monitor_league_activity() ran successfully.
+- Database returned one new onboarding alert from the existing member record when the monitor was smoke-tested.
+- Previous JavaScript syntax validation passed and the final auth change adds an initialization guard; final script audit is pending below.
+- Schema inspection confirmed workspace, membership and policy-rule tables exist and have RLS enabled.
+- The workspace-aware monitor reports game_actions_executed: false.
+- No EA password, game OTP, cookie or session token was requested or stored.
 
-## Not implemented / not verified
+## Required before public authentication is production-ready
 
-1. **Live game data API:** No documented official FC Mobile league-member/AP endpoint was found in EA's public help/support materials. The community tracker found is screenshot/OCR-based, not a live API. The current fallback is screenshot review, not live ingestion.
-2. **EA account connection:** Not implemented because no safe, documented authentication and data-access path has been verified. Do not enter EA credentials or session tokens into this website.
-3. **Automatic kicking:** Not implemented. The workflow only tracks the human decision and manual completion; no game action is executed.
-4. **Public Pages deployment:** The code is committed to main with cache-busted assets, but a real authenticated end-to-end test still requires signing into the dashboard and importing an actual roster screenshot. Do not regard this as a tested live data connector.
-5. **Discord notifications:** Optional webhook delivery is not connected unless a secret has been configured in Supabase Vault.
+1. Configure the Google OAuth client in Google Cloud and Supabase Auth.
+2. Configure the public Site URL/redirect allow-list in Supabase.
+3. Configure the Supabase email template for numeric OTP ({{ .Token }}) and production SMTP/rate limits.
+4. Create a Cloudflare Turnstile widget, replace the public site key placeholder in app.js, and place the secret key in Supabase Auth CAPTCHA settings.
+5. Test both signup methods and CAPTCHA from the real public URL. These credentials cannot be set from the repository alone.
 
-## Next validation steps
+## Still not implemented / not verified
 
-- Sign out and sign back in to refresh the Supabase admin metadata claim.
-- Import one real league member screenshot, check every value, save it, and confirm both the snapshot history table and AP history.
-- Review a shortfall recommendation in the dashboard. Do not click "Confirm removed in game" until a real manual removal has occurred in FC Mobile.
-- Keep public sign-ups disabled and only assign app_metadata.role = league_admin via a trusted admin path.
-- Reassess a live connector only if EA publishes or confirms an authorized API/interface for league rosters and Activity Points.
+- **Live EA connection:** no verified, supported public FC Mobile league/AP endpoint has been connected. The website deliberately does not accept an EA password or OTP.
+- **Actual game kicks/mass kicks:** unavailable because no authorized FC Mobile membership-management interface has been verified. The site bulk-creates reviewed recommendations; an admin must act manually and then confirm.
+- **Real roster screenshot:** OCR has not yet been validated on a real in-game screenshot.
+- **GitHub Pages runtime:** web tooling could not fetch the public Pages URL for a visual/functional check, so the final deployed rendering and sign-in redirects still need a browser test.
+- **External notifications:** Discord delivery remains optional and unconfigured unless a Vault webhook secret is added.
+
+## Security follow-up
+
+- Auth provider client secrets and Turnstile secret belong in provider dashboards, not app.js or GitHub.
+- Browser code contains the Supabase publishable key only.
+- Supabase security advisor may flag SECURITY DEFINER workspace/RPC functions because authenticated users must call them; each exposed function is restricted to the current user's workspace or to creating that user's own workspace.
+- Enable Supabase leaked-password protection and configure email rate limits/SMTP before public launch.
