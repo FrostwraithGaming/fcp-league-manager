@@ -35,6 +35,7 @@ function setAuthVisibility(user) {
   $("signOut").hidden = !user;
   $("userLabel").textContent = user ? (user.user_metadata?.full_name || user.email || "Signed in") : "";
   $("userEmail").textContent = user?.email || "";
+  $("signedInTools").hidden = !user;
 }
 function normalizedName(value) {
   return String(value || "").toLocaleLowerCase().normalize("NFKD")
@@ -42,7 +43,7 @@ function normalizedName(value) {
 }
 function indiaParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"
+    timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",hourCycle:"h23"
   }).formatToParts(date);
   return Object.fromEntries(parts.map(p => [p.type,p.value]));
 }
@@ -249,6 +250,7 @@ async function loadWorkspaceContext() {
   $("workspaceSelect").innerHTML=workspaces.map(w=>'<option value="' + safe(w.id) + '">' + safe(w.name) + '</option>').join("");
   $("workspaceSelect").value=activeWorkspaceId;
   $("workspaceSelect").disabled=workspaces.length<2;
+  $("workspaceHeading").textContent=workspaces.find(w=>w.id===activeWorkspaceId)?.name || "My League";
 }
 async function loadMembers() {
   if(!activeWorkspaceId) return;
@@ -258,7 +260,9 @@ async function loadMembers() {
   members=allMembers.filter(m=>m.status!=="removed");
   const memberIds=allMembers.map(m=>m.id);
   if(memberIds.length) {
-    const since=new Date(Date.now()-46*86400000).toISOString();
+    const customHours=Number(allRules.find(r=>r.rule_type==="activity_quota"&&r.period_type==="custom")?.duration_hours||0);
+    const historyDays=Math.min(370,Math.max(46,Math.ceil(customHours/24)+3));
+    const since=new Date(Date.now()-historyDays*86400000).toISOString();
     const historyResult=await db.from("activity_history").select("id,member_id,activity_points,recorded_at")
       .in("member_id",memberIds).gte("recorded_at",since).order("recorded_at",{ascending:true});
     if(historyResult.error) throw historyResult.error;
@@ -529,7 +533,8 @@ function periodKeyForBulk(rule) {
   const now=new Date();
   if(rule.period_type==="weekly") {
     const start=indiaWeekStart(now);
-    return {start:start.toISOString(),key:start.toISOString().slice(0,10),type:"weekly_shortfall"};
+    const p=indiaParts(start);
+    return {start:start.toISOString(),key:p.year+"-"+p.month+"-"+p.day,type:"weekly_shortfall"};
   }
   if(rule.period_type==="monthly") {
     const p=indiaParts(now);
@@ -540,7 +545,7 @@ function periodKeyForBulk(rule) {
   const bucket=Math.floor(now.getTime()/(h*3600000))*h*3600000-h*3600000;
   const start=new Date(bucket);
   const p=indiaParts(start);
-  return {start:start.toISOString(),key:p.year+"-"+p.month+"-"+p.day+"-"+String(start.getUTCHours()).padStart(2,"0"),type:"custom_shortfall"};
+  return {start:start.toISOString(),key:p.year+"-"+p.month+"-"+p.day+"-"+p.hour,type:"custom_shortfall"};
 }
 async function createBulkRecommendations() {
   const button=$("bulkRecommend");
@@ -744,6 +749,9 @@ async function init() {
   $("fcConnectButton").addEventListener("click",()=>{
     showMessage("EA account connection is not available yet: no supported, verified FC Mobile league/AP API or authorization flow has been confirmed. Do not enter an EA password or OTP here. Screenshot import remains available.",true);
   });
+
+  if(window.turnstile && typeof window.initFcpTurnstile==="function") window.initFcpTurnstile();
+  else window.addEventListener("load",()=>{if(window.turnstile && typeof window.initFcpTurnstile==="function") window.initFcpTurnstile();},{once:true});
 
   db.auth.onAuthStateChange((_event,session)=>{
     if(session?.user) { Promise.resolve().then(()=>initUser(session.user)); }
