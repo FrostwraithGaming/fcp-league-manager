@@ -3,158 +3,169 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080d18">
-  <meta name="description" content="FCP League Manager — secure league member and activity tracking.">
-  <title>FCP League Manager 27</title>
-  <link rel="stylesheet" href="styles.css?v=20261015f">
+  <meta name="theme-color" content="#f5f8fc">
+  <meta name="description" content="A multi-league FC Mobile roster, AP quota, and membership review workspace.">
+  <title>FCP League Manager — League operations, simplified</title>
+  <link rel="stylesheet" href="styles.css?v=20261015g">
 </head>
 <body>
-  <div class="ambient ambient-one" aria-hidden="true"></div>
-  <div class="ambient ambient-two" aria-hidden="true"></div>
-  <div class="shell">
-    <header class="topbar">
-      <a class="brand" href="./" aria-label="FCP League Manager home">
-        <div class="brand-mark">F</div>
-        <div class="brand-copy"><div class="eyebrow">LEAGUE OPERATIONS</div><h1>FCP League Manager <span>27</span></h1></div>
-      </a>
-      <div class="status-pill" id="statusLabel"><i></i><span>Sign in required</span></div>
-    </header>
-    <main>
-      <section class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">YOUR LEAGUE. UNDER CONTROL.</p>
-          <h2>Every member.<br><span>Every activity target.</span></h2>
-          <p class="sub">A clear workspace for onboarding, weekly activity, and league roster tracking.</p>
+  <div class="page-glow glow-a" aria-hidden="true"></div>
+  <div class="page-glow glow-b" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="FCP League Manager home">
+      <span class="brand-symbol">F</span>
+      <span class="brand-text"><strong>FCP League Manager</strong><small>FC MOBILE · LEAGUE OPERATIONS</small></span>
+    </a>
+    <div id="signedInTools" class="signed-in-tools" hidden>
+      <div class="user-chip"><span id="userAvatar" class="avatar">U</span><span class="user-lines"><strong id="userLabel">Manager</strong><small id="userEmail"></small></span></div>
+      <button id="signOut" class="button secondary-button" type="button" hidden>Sign out</button>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section id="authView" class="auth-layout">
+      <div class="auth-intro">
+        <span class="eyebrow">BUILT FOR LEAGUE ADMINS</span>
+        <h1>Keep your league<br><span>on track.</span></h1>
+        <p>Manage rosters, configure AP quotas, and review members who miss your targets — with a clear audit trail for every decision.</p>
+        <div class="feature-list">
+          <div class="feature-item"><span class="feature-icon">✓</span><div><strong>Multiple league workspaces</strong><small>Each league's roster and rules stay separate.</small></div></div>
+          <div class="feature-item"><span class="feature-icon">⌁</span><div><strong>AP rules that fit your league</strong><small>Join targets, weekly or monthly quotas, or custom windows.</small></div></div>
+          <div class="feature-item"><span class="feature-icon">◎</span><div><strong>Human-confirmed action queue</strong><small>Review single or bulk candidates before manual action.</small></div></div>
         </div>
-        <div class="hero-symbol" aria-hidden="true"><span>↗</span></div>
-      </section>
-
-      <section id="authPanel" class="panel auth-panel">
-        <div class="panel-kicker"><span class="secure-dot"></span> PRIVATE ADMIN AREA</div>
-        <h3>Welcome back</h3>
-        <p class="panel-sub">Sign in with the administrator account you created in Supabase.</p>
-        <form id="loginForm" class="form-grid">
-          <label for="email">Email address
-            <input id="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com" required>
-          </label>
-          <label for="password">Password
-            <input id="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
-          </label>
-          <button id="loginButton" class="primary" type="submit"><span>Sign in securely</span><span aria-hidden="true">→</span></button>
-        </form>
-        <p class="security-note"><span aria-hidden="true">●</span> Protected by Supabase authentication. No EA password is requested.</p>
-      </section>
-
-      <p id="message" class="message" hidden role="status" aria-live="polite"></p>
-
-      <div id="appContent" hidden>
-        <div class="account-row"><div><span class="eyebrow">SIGNED IN AS</span><div id="accountLabel" class="account-email"></div></div><button id="signOut" class="secondary" type="button">Sign out</button></div>
-        <section class="metrics">
-          <article class="metric"><div class="metric-top"><span class="metric-label">New member target</span><span class="metric-icon">01</span></div><div class="metric-value">500 <small>AP</small></div><div class="metric-note">Earned within 2 hours of first tracking</div></article>
-          <article class="metric"><div class="metric-top"><span class="metric-label">Weekly target</span><span class="metric-icon">02</span></div><div class="metric-value">1,500 <small>AP</small></div><div class="metric-note">Per 7-day period</div></article>
-          <article class="metric"><div class="metric-top"><span class="metric-label">Tracked members</span><span class="metric-icon">03</span></div><div class="metric-value" id="memberCount">0</div><div class="metric-note">Saved in your database</div></article>
-          <article class="metric"><div class="metric-top"><span class="metric-label">Open alerts</span><span class="metric-icon">04</span></div><div class="metric-value" id="openAlertCount">0</div><div class="metric-note">Needs administrator review</div></article>
-        </section>
-
-        <section class="panel scan-panel">
-          <div class="panel-head">
-            <div><p class="eyebrow">ROSTER SYNC</p><h3>Recognize AP from screenshots</h3></div>
-            <span class="tag">Browser OCR</span>
-          </div>
-          <p class="panel-sub scan-intro">Upload one or more screenshots of the FC Mobile League → Members screen. The browser reads the visible names and AP, then lets you review before saving. The screenshot stays on your device; reviewed roster values and snapshot metadata are saved to Supabase.</p>
-          <div class="notice"><strong>No live game connection:</strong> this does not sign in to FC Mobile, run a bot, or read the game in the background. OCR runs after you select screenshots.</div>
-          <form id="scanForm" class="scan-form">
-            <label for="rosterImages" class="upload-zone">
-              <span class="upload-icon">↑</span>
-              <strong>Choose league screenshots</strong>
-              <span>Tap to choose images from your phone · up to 8 images</span>
-              <input id="rosterImages" type="file" accept="image/*" multiple required>
-            </label>
-            <label for="syncMode" class="mode-label">Import mode
-              <select id="syncMode">
-                <option value="baseline">First scan — existing roster</option>
-                <option value="refresh">Routine scan — detect new members</option>
-              </select>
-            </label>
-            <p class="mode-help">Use “First scan” only for your initial roster import. Later, select “Routine scan” so newly detected names start their own tracking window.</p>
-            <button id="scanButton" class="primary" type="submit"><span>Scan screenshots</span><span aria-hidden="true">⌕</span></button>
-          </form>
-          <div id="ocrProgressBox" class="ocr-progress-box" hidden>
-            <div class="progress-head"><span id="ocrStatus">Preparing OCR…</span><span id="ocrPercent">0%</span></div>
-            <progress id="ocrProgress" max="100" value="0"></progress>
-          </div>
-          <div id="ocrReview" hidden>
-            <div class="review-head"><div><p class="eyebrow">CHECK BEFORE SAVING</p><h4 id="ocrResultTitle">Detected rows</h4></div><span id="ocrSelectedCount" class="count-pill">0 selected</span></div>
-            <p class="mode-help">OCR can misread stylized player names or numbers. Edit any incorrect name/AP and untick rows that are wrong before syncing.</p>
-            <div class="table-wrap ocr-table-wrap">
-              <table class="ocr-table">
-                <thead><tr><th>USE</th><th>PLAYER NAME</th><th>AP</th><th>CONFIDENCE</th></tr></thead>
-                <tbody id="ocrPreviewBody"><tr class="empty"><td colspan="4">No scan results yet.</td></tr></tbody>
-              </table>
-            </div>
-            <details class="raw-details"><summary>Show raw OCR text for troubleshooting</summary><pre id="ocrRaw"></pre></details>
-            <div class="review-actions">
-              <button id="syncSelected" class="primary" type="button">Save selected to Supabase <span aria-hidden="true">→</span></button>
-              <button id="discardScan" class="secondary" type="button">Discard scan</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head"><div><p class="eyebrow">MEMBER MANAGEMENT</p><h3>Member tracker</h3></div><button id="refreshDashboard" class="secondary" type="button">Refresh data</button></div>
-          <div class="notice"><strong>Saved to Supabase.</strong> Each reviewed screenshot batch has a grouped roster-snapshot record plus per-member AP history. New member detection is based on first appearance in a scan, not an official in-game join event. Screenshot image files are not uploaded.</div>
-          <form id="addMemberForm" class="add-row">
-            <label for="playerName">Add a league member manually</label>
-            <div class="add-controls"><input id="playerName" maxlength="80" required placeholder="Enter player name"><button class="primary" type="submit">Add member <span aria-hidden="true">+</span></button></div>
-          </form>
-          <div class="table-wrap"><table><thead><tr><th>PLAYER</th><th>FIRST TRACKED</th><th>LATEST AP</th><th>EST. AP GAIN THIS WEEK</th><th>ONBOARDING STATUS</th><th>ACTION</th></tr></thead><tbody id="membersBody"><tr class="empty"><td colspan="6">Loading saved members…</td></tr></tbody></table></div>
-        </section>
-
-        <section class="panel snapshot-panel">
-          <div class="panel-head"><div><p class="eyebrow">INGESTION AUDIT</p><h3>Saved roster snapshots</h3></div><span class="tag">Supabase history</span></div>
-          <p class="panel-sub alert-intro">Each reviewed screenshot batch is stored as one snapshot, with detected, saved, skipped, and failed row counts. Raw screenshot files remain on your device.</p>
-          <div class="table-wrap">
-            <table class="snapshot-table">
-              <thead><tr><th>SCANNED AT</th><th>SOURCE</th><th>REVIEWED ROWS</th><th>SAVED</th><th>SKIPPED</th><th>STATUS / FAILURES</th></tr></thead>
-              <tbody id="snapshotsBody"><tr class="empty"><td colspan="6">Loading snapshots…</td></tr></tbody>
-            </table>
-          </div>
-        </section>
-        <section class="panel action-review-panel">
-          <div class="panel-head"><div><p class="eyebrow">ADMIN DECISION GATE</p><h3>Removal recommendations</h3></div><span class="tag">Human confirmation</span></div>
-          <p class="panel-sub alert-intro">Onboarding and weekly shortfall alerts can create a recommendation for review. Approving only records your decision; it does not kick anyone. After you remove a member manually inside FC Mobile, confirm completion here so the tracker can mark that member removed. The app will not automate game actions unless a supported method is verified.</p>
-          <div class="table-wrap">
-            <table class="action-review-table">
-              <thead><tr><th>PROPOSED</th><th>MEMBER</th><th>REASON</th><th>REVIEW STATUS</th><th>ADMIN ACTION</th></tr></thead>
-              <tbody id="actionReviewsBody"><tr class="empty"><td colspan="5">Loading recommendations…</td></tr></tbody>
-            </table>
-          </div>
-        </section>
-        <section class="panel alert-panel">
-          <div class="panel-head">
-            <div><p class="eyebrow">AUTOMATED COMPLIANCE</p><h3>Alerts &amp; review queue</h3></div>
-            <span class="tag">Cloud checks active</span>
-          </div>
-          <p class="panel-sub alert-intro">Supabase checks the stored activity history every 30 minutes. Onboarding alerts are checked continuously; weekly shortfalls are assessed Sunday from 8:00 PM India time. Weekly estimates need a baseline snapshot and at least one snapshot during the current week.</p>
-          <div class="table-wrap">
-            <table class="alerts-table">
-              <thead><tr><th>CREATED</th><th>ALERT</th><th>MEMBER</th><th>STATE / ACTION</th></tr></thead>
-              <tbody id="alertsBody"><tr class="empty"><td colspan="4">Loading alerts…</td></tr></tbody>
-            </table>
-          </div>
-        </section>
-        <section class="panel rules">
-          <div class="panel-head"><div><p class="eyebrow">LEAGUE POLICY</p><h3>Activity thresholds</h3></div><span class="tag">Tracking configured</span></div>
-          <div class="rule-row"><div class="rule-icon">01</div><div class="rule-copy"><strong>New-member onboarding</strong><p>500 AP earned after first tracking, within 2 hours. New names are flagged for review if the window expires.</p></div><span class="rule-state">Tracked</span></div>
-          <div class="rule-row"><div class="rule-icon">02</div><div class="rule-copy"><strong>Weekly activity</strong><p>Target: 1,500 AP per week. The cloud monitor evaluates the saved AP snapshots on Sunday evening; missing history is flagged instead of guessing.</p></div><span class="rule-state">Checks active</span></div>
-          <div class="rule-row"><div class="rule-icon">03</div><div class="rule-copy"><strong>Automatic removal</strong><p>Review alerts and decide manually. Automatic in-game kicking stays disabled until a supported and verified membership-management interface is available.</p></div><span class="rule-state pending">Connection blocked</span></div>
-        </section>
+        <div class="compliance-note"><span class="note-dot"></span><span><strong>No fake live integration.</strong> FC Mobile data still needs a verified supported interface; reviewed screenshots are available as the current input.</span></div>
       </div>
-      <footer><span class="footer-brand">FCP</span> League Manager 27 <span class="footer-sep">·</span> Private admin access <span class="footer-sep">·</span> No EA credentials stored</footer>
-    </main>
-  </div>
+      <section class="auth-card">
+        <div class="auth-card-heading"><span class="auth-badge">WELCOME</span><h2>Sign in or create an account</h2><p>Use Google or verify your email with a one-time code.</p></div>
+        <button id="googleLogin" type="button" class="google-button"><span class="google-g">G</span> Continue with Google <span class="button-arrow">→</span></button>
+        <div class="or-divider"><span></span><small>OR USE EMAIL</small><span></span></div>
+        <div id="sendCodePanel">
+          <form id="sendCodeForm" class="auth-form">
+            <label for="email">Email address</label>
+            <input id="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com" required>
+            <div class="captcha-wrap">
+              <div id="turnstileWidget"></div>
+              <p id="captchaSetupNote" class="setup-note">CAPTCHA setup required before public sign-up: configure Cloudflare Turnstile in Supabase Auth and add its site key to app.js.</p>
+            </div>
+            <button id="sendCode" class="button primary-button full-button" type="submit">Email me a verification code <span>→</span></button>
+          </form>
+        </div>
+        <div id="otpPanel" hidden>
+          <form id="verifyCodeForm" class="auth-form">
+            <label for="emailCode">Verification code</label>
+            <input id="emailCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="Enter the code from your email" required>
+            <input id="otpEmail" type="hidden">
+            <button id="verifyCode" class="button primary-button full-button" type="submit">Verify email and continue <span>→</span></button>
+            <button id="changeEmail" class="text-button" type="button">Use a different email</button>
+          </form>
+        </div>
+        <div class="auth-legal">By continuing, you agree to use authorized data sources and keep third-party credentials private.</div>
+      </section>
+    </section>
+
+    <p id="message" class="message" hidden role="status" aria-live="polite"></p>
+
+    <div id="appView" hidden>
+      <section class="workspace-bar">
+        <div class="workspace-title"><span class="eyebrow">YOUR WORKSPACE</span><div><h1 id="workspaceHeading">My League</h1><p>Roster, rules and recommendations for this league.</p></div></div>
+        <div class="workspace-controls"><label class="workspace-select-label" for="workspaceSelect">League</label><select id="workspaceSelect" aria-label="Choose a league workspace"></select><button id="createWorkspaceButton" class="button secondary-button" type="button">+ New league</button></div>
+      </section>
+
+      <section class="integration-strip">
+        <div class="connector-mark">FC</div>
+        <div class="connector-copy"><span class="eyebrow">FC MOBILE DATA CONNECTION</span><strong>Not connected — API access unverified</strong><p>Do not enter your EA password or OTP here. Until a supported connection exists, import reviewed screenshots and AP values.</p></div>
+        <button id="fcConnectButton" class="button outline-button" type="button">Connection details</button>
+      </section>
+
+      <section class="metrics-grid">
+        <article class="metric-card"><div class="metric-label">Roster members</div><div id="memberCount" class="metric-value">0</div><div class="metric-foot">Not marked removed</div><span class="metric-icon blue">◉</span></article>
+        <article class="metric-card"><div class="metric-label">Pending decisions</div><div id="reviewCount" class="metric-value">0</div><div class="metric-foot">Action review queue</div><span class="metric-icon amber">⚑</span></article>
+        <article class="metric-card"><div class="metric-label">Unread alerts</div><div id="openAlertCount" class="metric-value">0</div><div class="metric-foot">Data and quota alerts</div><span class="metric-icon red">!</span></article>
+        <article class="metric-card"><div class="metric-label">Roster snapshots</div><div id="snapshotCount" class="metric-value">0</div><div class="metric-foot">Saved audit history</div><span class="metric-icon green">▤</span></article>
+      </section>
+
+      <section class="content-grid">
+        <section class="card roster-card">
+          <div class="section-heading"><div><span class="eyebrow">ROSTER INPUT</span><h2>Import league members</h2><p>OCR reads a screenshot on your device. Correct the draft before saving.</p></div><span class="live-tag"><i></i> Reviewed input</span></div>
+          <div class="notice"><strong>Current connector:</strong> FC Mobile has no verified public league/AP endpoint connected to this project. Screenshot values are saved only after you review them.</div>
+          <form id="scanForm" class="upload-form">
+            <label for="rosterImages" class="upload-zone"><span class="upload-cloud">↑</span><strong>Select league screenshots</strong><small>League → Members · up to 8 images · 12 MB each</small><input id="rosterImages" type="file" accept="image/*" multiple required></label>
+            <label class="form-label" for="syncMode">Import mode</label>
+            <select id="syncMode" class="form-input"><option value="baseline">First scan — establish starting roster</option><option value="refresh">Routine scan — update AP and detect new names</option></select>
+            <button id="scanButton" class="button primary-button full-button" type="submit">Scan screenshots <span>⌕</span></button>
+          </form>
+          <div id="ocrProgressBox" class="progress-panel" hidden><div class="progress-header"><span id="ocrStatus">Preparing scan…</span><strong id="ocrPercent">0%</strong></div><progress id="ocrProgress" max="100" value="0"></progress></div>
+          <div id="ocrReview" hidden class="ocr-review">
+            <div class="section-heading compact-heading"><div><span class="eyebrow">REVIEW REQUIRED</span><h3 id="ocrResultTitle">Detected rows</h3></div><span id="ocrSelectedCount" class="count-badge">0 selected</span></div>
+            <p class="help-text">Edit OCR mistakes. Uncheck false matches. OVR can be added after saving in the member table.</p>
+            <div class="table-scroll"><table class="data-table ocr-table"><thead><tr><th>USE</th><th>PLAYER</th><th>CURRENT AP</th><th>CONFIDENCE</th></tr></thead><tbody id="ocrPreviewBody"><tr class="empty"><td colspan="4">No scan results yet.</td></tr></tbody></table></div>
+            <details class="raw-details"><summary>Show extracted text</summary><pre id="ocrRaw"></pre></details>
+            <div class="button-row"><button id="syncSelected" class="button primary-button" type="button">Save selected →</button><button id="discardScan" class="button secondary-button" type="button">Discard</button></div>
+          </div>
+        </section>
+
+        <section class="card policy-card">
+          <div class="section-heading"><div><span class="eyebrow">AUTOMATION RULES</span><h2>Set your quotas</h2><p>Choose targets for this league. Enforcement generates recommendations, not automatic kicks.</p></div></div>
+          <form id="savePoliciesForm" class="policy-form">
+            <div class="policy-block">
+              <div class="policy-block-heading"><span class="rule-number">01</span><div><h3>New-member onboarding</h3><p>AP to earn after first tracking</p></div></div>
+              <div class="field-pair"><label>AP target<input id="onboardingTarget" type="number" min="1" max="9999999" value="500" required></label><label>Time limit (hours)<input id="onboardingHours" type="number" min="1" max="8760" value="2" required></label></div>
+            </div>
+            <div class="policy-block">
+              <div class="policy-block-heading"><span class="rule-number">02</span><div><h3>Activity AP quota</h3><p>One active quota per workspace</p></div></div>
+              <label>AP quota<input id="quotaTarget" type="number" min="1" max="9999999" value="1500" required></label>
+              <label>Evaluation period<select id="quotaPeriod" class="form-input"><option value="weekly">Weekly · Monday to Sunday</option><option value="monthly">Monthly · calendar month</option><option value="custom">Custom hours</option></select></label>
+              <label id="quotaHoursField" hidden>Custom window length (hours)<input id="quotaHours" type="number" min="1" max="8760" value="24" required></label>
+            </div>
+            <div class="policy-block">
+              <div class="policy-block-heading"><span class="rule-number">03</span><div><h3>Minimum OVR</h3><p>Flag members below a threshold</p></div></div>
+              <label class="toggle-row"><input id="ovrEnabled" type="checkbox"><span><strong>Enable OVR recommendations</strong><small>Uses OVR values reviewed or entered by an admin.</small></span></label>
+              <label>Minimum OVR<input id="minimumOvr" type="number" min="1" max="999" value="80" required></label>
+            </div>
+            <button id="savePolicies" class="button primary-button full-button" type="submit">Save league rules <span>✓</span></button>
+          </form>
+        </section>
+      </section>
+
+      <section class="card">
+        <div class="section-heading"><div><span class="eyebrow">MEMBER MANAGEMENT</span><h2>League roster</h2><p>AP and OVR can be reviewed and updated. Data is isolated to the selected workspace.</p></div><button id="refreshDashboard" class="button secondary-button" type="button">Refresh ↻</button></div>
+        <form id="addMemberForm" class="manual-add-form">
+          <label>Player name<input id="playerName" type="text" maxlength="80" placeholder="League member name" required></label>
+          <label>Starting AP<input id="playerPoints" type="number" min="0" max="9999999" value="0" required></label>
+          <label>OVR (optional)<input id="playerOvr" type="number" min="1" max="999" placeholder="e.g. 105"></label>
+          <button id="addMemberButton" class="button primary-button" type="submit">Add member +</button>
+        </form>
+        <div class="table-scroll"><table class="data-table roster-table"><thead><tr><th>PLAYER</th><th>OVR</th><th>LATEST AP</th><th>AP THIS PERIOD</th><th>ONBOARDING</th><th>LAST CHECK</th><th>ACTION</th></tr></thead><tbody id="membersBody"><tr class="empty"><td colspan="7">Loading roster…</td></tr></tbody></table></div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading"><div><span class="eyebrow">MASS REVIEW</span><h2>Bulk candidate rules</h2><p>Create one review recommendation for every member meeting the selected criteria.</p></div><span class="review-tag">Human-confirmed</span></div>
+        <div class="bulk-controls"><label>Find candidates by<select id="bulkCriteria" class="form-input"><option value="ap">Below the configured AP quota</option><option value="ovr">Below the configured minimum OVR</option></select></label><button id="bulkRecommend" class="button primary-button" type="button">Generate bulk recommendations →</button></div>
+        <p class="help-text">This is a bulk review builder, not a kick button. Members are matched against the saved values and snapshot history, then each candidate gets an auditable queue item. Nothing is removed in-game automatically.</p>
+      </section>
+
+      <section class="card">
+        <div class="section-heading"><div><span class="eyebrow">ACTION GATE</span><h2>Review &amp; confirm</h2><p>Approve or decline recommendations. Confirm completion only after a manual in-game removal.</p></div><span class="review-tag">No automatic kicks</span></div>
+        <div class="table-scroll"><table class="data-table review-table"><thead><tr><th>PROPOSED</th><th>MEMBER</th><th>REASON</th><th>STATUS</th><th>DECISION</th></tr></thead><tbody id="actionReviewsBody"><tr class="empty"><td colspan="5">Loading recommendations…</td></tr></tbody></table></div>
+      </section>
+
+      <section class="content-grid bottom-grid">
+        <section class="card">
+          <div class="section-heading"><div><span class="eyebrow">CLOUD ALERTS</span><h2>Alert inbox</h2><p>Scheduled AP/OVR checks and data coverage.</p></div></div>
+          <div class="table-scroll"><table class="data-table alerts-table"><thead><tr><th>TIME</th><th>ALERT</th><th>MEMBER</th><th>STATE</th></tr></thead><tbody id="alertsBody"><tr class="empty"><td colspan="4">Loading alerts…</td></tr></tbody></table></div>
+        </section>
+        <section class="card">
+          <div class="section-heading"><div><span class="eyebrow">AUDIT TRAIL</span><h2>Roster snapshots</h2><p>Batch summaries for reviewed imports. Screenshot images are never uploaded.</p></div></div>
+          <div class="table-scroll"><table class="data-table snapshots-table"><thead><tr><th>SCANNED</th><th>SOURCE</th><th>SAVED</th><th>SKIPPED</th><th>STATUS</th></tr></thead><tbody id="snapshotsBody"><tr class="empty"><td colspan="5">Loading snapshots…</td></tr></tbody></table></div>
+        </section>
+      </section>
+    </div>
+
+    <footer class="site-footer"><span class="brand-symbol small-symbol">F</span><span>FCP League Manager</span><span class="footer-separator">·</span><span>Public beta</span><span class="footer-spacer"></span><a href="https://help.ea.com/en/articles/ea-sports-fc/fc-mobile/rules-fc-mobile/" target="_blank" rel="noreferrer">EA account safety</a></footer>
+  </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="app.js?v=20261015f"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=initFcpTurnstile&render=explicit" async defer></script>
+  <script src="app.js?v=20261015g"></script>
 </body>
 </html>
