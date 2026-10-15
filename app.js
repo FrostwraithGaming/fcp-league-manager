@@ -29,7 +29,7 @@ function normalizedName(value) {
   return String(value || "").toLocaleLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 }
 function statusFor(m) {
-  if (m.status === "active") return ["Onboarding target met", "good"];
+  if (m.status === "active") { const earned = Number(m.last_points || 0) - Number(m.initial_points || 0); return earned >= 500 ? ["Onboarding target met", "good"] : ["Active / baseline", "good"]; }
   if (m.status === "removed") return ["Removed", "bad"];
   const joined = new Date(m.joined_at).getTime();
   const elapsed = Number.isFinite(joined) ? (Date.now() - joined) / 3600000 : 0;
