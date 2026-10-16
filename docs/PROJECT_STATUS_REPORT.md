@@ -1,7 +1,7 @@
 # Public Website Update — FCP League Manager
 **Date:** 15 October 2026  
 **Repository:** https://github.com/FrostwraithGaming/fcp-league-manager  
-**Dashboard:** https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015i  
+**Dashboard:** https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261016a  
 **Supabase project:** ekfziidavohcdzbypocn
 
 ## Implemented
@@ -20,7 +20,7 @@
 - Supabase migrations for multi-user workspace/RLS schema, custom rules, monitor updates, and default OVR threshold applied successfully.
 - Workspace-aware monitor migration applied and monitor_league_activity() ran successfully.
 - Database returned one new onboarding alert from the existing member record when the monitor was smoke-tested.
-- Final `app.js` passed JavaScript syntax parsing after the latest change; DOM audit found no missing or duplicate IDs, and both CSS/JS cache-busters are aligned at `20261015i`.
+- Final `app.js` passed JavaScript syntax parsing after the latest change; DOM audit found no missing or duplicate IDs, and both CSS/JS cache-busters are aligned at `20261016a`.
 - Schema inspection confirmed workspace, membership and policy-rule tables exist and have RLS enabled.
 - The workspace-aware monitor reports game_actions_executed: false.
 - No EA password, game OTP, cookie or session token was requested or stored.
@@ -47,3 +47,11 @@
 - Browser code contains the Supabase publishable key only.
 - Supabase security advisor may flag SECURITY DEFINER workspace/RPC functions because authenticated users must call them; each exposed function is restricted to the current user's workspace or to creating that user's own workspace.
 - Enable Supabase leaked-password protection and configure email rate limits/SMTP before public launch.
+
+
+## Connector UI follow-up — 16 October 2026
+
+- The FC Mobile connection card now clearly distinguishes the available screenshot input from an unverified live EA API.
+- Its primary action now scrolls to the real screenshot-import form and focuses the file picker, rather than presenting a dead-end connection alert.
+- Re-validated browser JavaScript syntax and DOM references after the change.
+- This does not claim or enable live EA data sync. EA credentials/OTP collection, live AP fetch, and in-game kicks remain disabled pending an official supported interface.
