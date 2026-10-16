@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f5f8fc">
   <meta name="description" content="A multi-league FC Mobile roster, AP quota, and membership review workspace.">
   <title>FCP League Manager — League operations, simplified</title>
-  <link rel="stylesheet" href="styles.css?v=20261015i">
+  <link rel="stylesheet" href="styles.css?v=20261016a">
 </head>
 <body>
   <div class="page-glow glow-a" aria-hidden="true"></div>
@@ -71,10 +71,10 @@
         <div class="workspace-controls"><label class="workspace-select-label" for="workspaceSelect">League</label><select id="workspaceSelect" aria-label="Choose a league workspace"></select><button id="createWorkspaceButton" class="button secondary-button" type="button">+ New league</button></div>
       </section>
 
-      <section class="integration-strip">
-        <div class="connector-mark">FC</div>
-        <div class="connector-copy"><span class="eyebrow">FC MOBILE DATA CONNECTION</span><strong>Not connected — API access unverified</strong><p>Do not enter your EA password or OTP here. Until a supported connection exists, import reviewed screenshots and AP values.</p></div>
-        <button id="fcConnectButton" class="button outline-button" type="button">Connection details</button>
+      <section class="integration-strip" aria-labelledby="fcConnectionHeading">
+        <div class="connector-mark" aria-hidden="true">FC</div>
+        <div class="connector-copy"><span class="eyebrow">FC MOBILE DATA CONNECTION</span><strong id="fcConnectionHeading">Screenshot connector available · Official API not verified</strong><p>Automatic EA account sign-in, AP sync, and in-game kicking are not available without an EA-supported interface. Never enter your EA password or OTP into this website.</p><div class="connector-status-row"><span class="connector-status-pill"><i></i> Screenshot import ready</span><span class="connector-status-pill pending"><i></i> EA API pending</span></div></div>
+        <button id="fcConnectButton" class="button primary-button" type="button">Import roster screenshots <span aria-hidden="true">→</span></button>
       </section>
 
       <section class="metrics-grid">
@@ -166,6 +166,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer onload="window.initFcpTurnstile && window.initFcpTurnstile()"></script>
-  <script src="app.js?v=20261015i"></script>
+  <script src="app.js?v=20261016a"></script>
 </body>
 </html>
