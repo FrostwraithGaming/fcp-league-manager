@@ -66,7 +66,11 @@ The browser only contains the Turnstile site key, which is public by design. The
 - create_league_workspace only creates workspace memberships for the signed-in user.
 - Never expose the Supabase service-role key, Google client secret, Turnstile secret, EA password, or session tokens in frontend code.
 
-## 6. FC Mobile data and action limitations
+## 6. Supported roster import
+
+The roster input supports two review-first paths: local screenshot OCR (up to eight images) and pasted CSV/TSV values. For pasted rows, use `Player name, AP` and optionally a third OVR column; for example `Alex,1250,108`. Both paths load an editable review draft. Nothing is written to the roster until the user selects rows and clicks Save selected. Screenshot files remain in the browser and are not uploaded. These are supported manual data-import workflows, not a live FC Mobile account connection.
+
+## 7. FC Mobile data and action limitations
 
 No verified official FC Mobile league/AP endpoint is currently connected. The “FC Mobile connection” card is intentionally a truthful status/error action instead of a credential form. Do not ask users to put their EA password or OTP into this website.
 
@@ -74,7 +78,7 @@ The current fallback is reviewed screenshot OCR. Users can update AP and OVR fro
 
 EA account safety rules: https://help.ea.com/en/articles/ea-sports-fc/fc-mobile/rules-fc-mobile/
 
-## 7. Smoke-test checklist
+## 8. Smoke-test checklist
 
 - [ ] Google sign-in redirects to Google and returns to the GitHub Pages URL.
 - [ ] Email sends a numeric OTP and verifies successfully.
@@ -91,3 +95,8 @@ EA account safety rules: https://help.ea.com/en/articles/ea-sports-fc/fc-mobile/
 ## Live connection safety boundary
 
 The FC Mobile connection card is now an actionable path into screenshot import, while explicitly distinguishing that working input from a live EA API. Do not add an EA email/password/OTP form unless EA documents a supported authorization and league-data interface. A password form without such an interface would collect sensitive credentials but still could not reliably fetch AP or manage members. The existing bulk AP/OVR workflow creates auditable review recommendations only; it does not execute game actions.
+
+
+## Custom domain
+
+GitHub Pages can use a custom hostname only after the owner controls a real registered domain and configures DNS. Do not create a Pages CNAME for the requested text “FC league manager.frosttech”: spaces are invalid in hostnames, and `.frosttech` is not a normal public DNS suffix unless it is a domain actually delegated to the owner. Choose a hostname under a registered domain (for example `fc-league-manager.example.com`, replacing example.com with the domain you own), add the GitHub Pages DNS record, then add the exact hostname in repository Settings → Pages → Custom domain and update Supabase Auth Site URL/redirect allow-list and Cloudflare Turnstile allowed hostname.
