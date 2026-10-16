@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f5f8fc">
   <meta name="description" content="A multi-league FC Mobile roster, AP quota, and membership review workspace.">
   <title>FCP League Manager — League operations, simplified</title>
-  <link rel="stylesheet" href="styles.css?v=20261016a">
+  <link rel="stylesheet" href="styles.css?v=20261016b">
 </head>
 <body>
   <div class="page-glow glow-a" aria-hidden="true"></div>
@@ -94,6 +94,12 @@
             <select id="syncMode" class="form-input"><option value="baseline">First scan — establish starting roster</option><option value="refresh">Routine scan — update AP and detect new names</option></select>
             <button id="scanButton" class="button primary-button full-button" type="submit">Scan screenshots <span>⌕</span></button>
           </form>
+          <details class="paste-import">
+            <summary>Or import reviewed AP values from a table</summary>
+            <p class="help-text">Paste CSV or tab-separated rows with <strong>Player name, AP</strong> (optional OVR). Example: Alex,1250,108. This stays in a review draft until you save selected rows.</p>
+            <textarea id="apPasteInput" rows="5" placeholder="Player name, AP, OVR&#10;Alex, 1250, 108&#10;Nova, 940, 106" aria-label="Paste player names, AP values, and optional OVR"></textarea>
+            <button id="parseApPaste" class="button secondary-button" type="button">Review pasted AP values</button>
+          </details>
           <div id="ocrProgressBox" class="progress-panel" hidden><div class="progress-header"><span id="ocrStatus">Preparing scan…</span><strong id="ocrPercent">0%</strong></div><progress id="ocrProgress" max="100" value="0"></progress></div>
           <div id="ocrReview" hidden class="ocr-review">
             <div class="section-heading compact-heading"><div><span class="eyebrow">REVIEW REQUIRED</span><h3 id="ocrResultTitle">Detected rows</h3></div><span id="ocrSelectedCount" class="count-badge">0 selected</span></div>
@@ -166,6 +172,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer onload="window.initFcpTurnstile && window.initFcpTurnstile()"></script>
-  <script src="app.js?v=20261016a"></script>
+  <script src="app.js?v=20261016b"></script>
 </body>
 </html>
