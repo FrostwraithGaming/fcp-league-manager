@@ -735,6 +735,20 @@ async function init() {
     finally { button.disabled=false;button.innerHTML='Scan screenshots <span aria-hidden="true">⌕</span>'; }
   });
   $("syncSelected").addEventListener("click",saveOcrSnapshot);
+  $("parseApPaste").addEventListener("click",()=> {
+    try {
+      const parsed=parsePastedAPRows($("apPasteInput").value);
+      if(!parsed.length) throw new Error("No valid rows found. Paste one player and AP value per line.");
+      ocrDrafts=parsed;
+      rawOcrText=$("apPasteInput").value.slice(0,12000);
+      $("ocrRaw").textContent=rawOcrText;
+      $("ocrProgressBox").hidden=true;
+      $("ocrReview").hidden=false;
+      renderOCRDrafts();
+      $("ocrReview").scrollIntoView({block:"nearest",behavior:"smooth"});
+      showMessage(parsed.length+" AP row(s) loaded into review. Check names and AP before saving.");
+    } catch(e) { showMessage(e.message||String(e),true); }
+  });
   $("discardScan").addEventListener("click",()=>{
     ocrDrafts=[];rawOcrText="";$("ocrReview").hidden=true;$("ocrProgressBox").hidden=true;$("rosterImages").value="";
     showMessage("The OCR draft was discarded. Nothing was saved.");
@@ -791,6 +805,28 @@ async function init() {
 }
 init().catch(e=>showMessage("Startup error: "+(e.message||e),true));
 
+function parsePastedAPRows(source) {
+  const lines=String(source||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const rows=[];
+  for(let index=0;index<lines.length;index++) {
+    const line=lines[index];
+    const delimiter=line.includes("\t")?"\t":line.includes(";")?";":",";
+    const cells=line.split(delimiter).map(v=>v.trim().replace(/^["']|["']$/g,""));
+    if(cells.length<2) continue;
+    const first=normalizedName(cells[0]);
+    const second=String(cells[1]||"").trim().toLowerCase();
+    if(index===0 && /^(player|playername|name|member|username)$/.test(first) && /^(ap|points|activitypoints|activity)$/.test(second)) continue;
+    const name=cells[0].trim();
+    const points=parseAP(cells[1]);
+    const ovrText=cells[2]||"";
+    const ovr=/^\d{1,3}$/.test(ovrText)?Number(ovrText):null;
+    if(name.length<2 || name.length>80 || points===null) continue;
+    rows.push({name,points,ovr,confidence:100,selected:true,source:"pasted"});
+  }
+  const unique=new Map();
+  for(const row of rows) unique.set(normalizedName(row.name),row);
+  return [...unique.values()].sort((a,b)=>a.name.localeCompare(b.name));
+}
 function parseAP(text) {
   const normalized = String(text || "").trim().replace(/[OoQ]/g, "0").replace(/[Il|]/g, "1");
   if (!/^[0-9][0-9,.\s]*$/.test(normalized)) return null;
