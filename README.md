@@ -4,7 +4,7 @@ A public, mobile-friendly, multi-workspace FC Mobile league manager with a light
 
 ## Public website
 
-- Dashboard: https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261015i
+- Dashboard: https://frostwraithgaming.github.io/fcp-league-manager/?refresh=20261016a
 - Sign-in options: Google OAuth or email one-time verification code.
 - CAPTCHA: Cloudflare Turnstile widget hook included.
 - **Before public sign-in works:** finish provider configuration in Supabase/Google Cloud/Cloudflare. See docs/PUBLIC_LAUNCH_SETUP.md.
