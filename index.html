@@ -96,7 +96,7 @@
           </form>
           <details class="paste-import">
             <summary>Or import reviewed AP values from a table</summary>
-            <p class="help-text">Paste CSV or tab-separated rows with <strong>Player name, AP</strong> (optional OVR). Example: Alex,1250,108. This stays in a review draft until you save selected rows.</p>
+            <p class="help-text">Paste CSV or tab-separated rows with <strong>Player name, AP, OVR</strong>. OVR is optional. Example: Alex,1250,108. This stays in a review draft until you save selected rows.</p>
             <textarea id="apPasteInput" rows="5" placeholder="Player name, AP, OVR&#10;Alex, 1250, 108&#10;Nova, 940, 106" aria-label="Paste player names, AP values, and optional OVR"></textarea>
             <button id="parseApPaste" class="button secondary-button" type="button">Review pasted AP values</button>
           </details>
@@ -104,7 +104,7 @@
           <div id="ocrReview" hidden class="ocr-review">
             <div class="section-heading compact-heading"><div><span class="eyebrow">REVIEW REQUIRED</span><h3 id="ocrResultTitle">Detected rows</h3></div><span id="ocrSelectedCount" class="count-badge">0 selected</span></div>
             <p class="help-text">Edit OCR mistakes. Uncheck false matches. OVR can be added after saving in the member table.</p>
-            <div class="table-scroll"><table class="data-table ocr-table"><thead><tr><th>USE</th><th>PLAYER</th><th>CURRENT AP</th><th>CONFIDENCE</th></tr></thead><tbody id="ocrPreviewBody"><tr class="empty"><td colspan="4">No scan results yet.</td></tr></tbody></table></div>
+            <div class="table-scroll"><table class="data-table ocr-table"><thead><tr><th>USE</th><th>PLAYER</th><th>CURRENT AP</th><th>OVR</th><th>CONFIDENCE</th></tr></thead><tbody id="ocrPreviewBody"><tr class="empty"><td colspan="5">No scan results yet.</td></tr></tbody></table></div>
             <details class="raw-details"><summary>Show extracted text</summary><pre id="ocrRaw"></pre></details>
             <div class="button-row"><button id="syncSelected" class="button primary-button" type="button">Save selected →</button><button id="discardScan" class="button secondary-button" type="button">Discard</button></div>
           </div>
