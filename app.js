@@ -930,7 +930,7 @@ function updateSelectedCount() {
 function readDraftEdits() {
   $("ocrPreviewBody").querySelectorAll("[data-edit-name]").forEach(el => { ocrDrafts[Number(el.dataset.editName)].name = el.value; });
   $("ocrPreviewBody").querySelectorAll("[data-edit-points]").forEach(el => { ocrDrafts[Number(el.dataset.editPoints)].points = Number(el.value); });
-  $("ocrPreviewBody").querySelectorAll("[data-edit-ovr]").forEach(el => { const v=el.value.trim(); ocrDrafts[Number(el.dataset.editOvr)].ovr = /^\\d{1,3}$/.test(v)?Number(v):null; });
+  $("ocrPreviewBody").querySelectorAll("[data-edit-ovr]").forEach(el => { const v=el.value.trim(); ocrDrafts[Number(el.dataset.editOvr)].ovr = /^\d{1,3}$/.test(v)?Number(v):null; });
   $("ocrPreviewBody").querySelectorAll("[data-select-row]").forEach(el => { ocrDrafts[Number(el.dataset.selectRow)].selected = el.checked; });
   updateSelectedCount();
 }
