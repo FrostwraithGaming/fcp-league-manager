@@ -86,3 +86,8 @@ EA account safety rules: https://help.ea.com/en/articles/ea-sports-fc/fc-mobile/
 - [ ] Set OVR for a member and generate bulk AP/OVR recommendations; confirm no game action is executed.
 - [ ] Complete only a review that was manually actioned inside the game.
 - [ ] Verify GitHub Pages serves the latest assets on mobile and desktop.
+
+
+## Live connection safety boundary
+
+The FC Mobile connection card is now an actionable path into screenshot import, while explicitly distinguishing that working input from a live EA API. Do not add an EA email/password/OTP form unless EA documents a supported authorization and league-data interface. A password form without such an interface would collect sensitive credentials but still could not reliably fetch AP or manage members. The existing bulk AP/OVR workflow creates auditable review recommendations only; it does not execute game actions.
