@@ -503,7 +503,9 @@ async function saveOcrSnapshot() {
         if(mode==="baseline") nextStatus="active";
         else if(earned>=Number(rule?.target_ap||500)) nextStatus="active";
         else if(nextStatus!=="active" && Date.now()>=deadline) nextStatus="review";
-        const {error}=await db.from("league_members").update({last_points:points,last_checked_at:scannedAt,status:nextStatus})
+        const patch={last_points:points,last_checked_at:scannedAt,status:nextStatus};
+        if(row.ovr!==undefined && row.ovr!==null && Number.isInteger(Number(row.ovr)) && Number(row.ovr)>0 && Number(row.ovr)<=999) patch.ovr=Number(row.ovr);
+        const {error}=await db.from("league_members").update(patch)
           .eq("id",existing.id).eq("workspace_id",activeWorkspaceId);
         if(error) {
           failed++;errors.push(name+": "+error.message);
@@ -514,7 +516,7 @@ async function saveOcrSnapshot() {
       } else {
         const rule=onboardingRule();
         const {data,error}=await db.from("league_members").insert({
-          workspace_id:activeWorkspaceId,player_name:name,joined_at:scannedAt,
+          workspace_id:activeWorkspaceId,player_name:name,joined_at:scannedAt,...(Number.isInteger(Number(row.ovr)) && Number(row.ovr)>0 && Number(row.ovr)<=999 ? {ovr:Number(row.ovr)} : {}),
           initial_deadline:new Date(new Date(scannedAt).getTime()+Number(rule?.duration_hours||2)*3600000).toISOString(),
           initial_points:points,last_points:points,last_checked_at:scannedAt,status:mode==="baseline"?"active":"pending"
         }).select().single();
@@ -906,7 +908,7 @@ function parseRecognizedRows(words, imageWidth) {
 function renderOCRDrafts() {
   const body = $("ocrPreviewBody");
   if (!ocrDrafts.length) {
-    body.innerHTML = '<tr class="empty"><td colspan="4">No player rows could be confidently detected. Try a clearer screenshot with the whole member list visible.</td></tr>';
+    body.innerHTML = '<tr class="empty"><td colspan="5">No player rows could be confidently detected. Try a clearer screenshot with the whole member list visible.</td></tr>';
     $("ocrResultTitle").textContent = "No rows detected";
   } else {
     $("ocrResultTitle").textContent = ocrDrafts.length + " possible member rows";
@@ -927,6 +929,7 @@ function updateSelectedCount() {
 function readDraftEdits() {
   $("ocrPreviewBody").querySelectorAll("[data-edit-name]").forEach(el => { ocrDrafts[Number(el.dataset.editName)].name = el.value; });
   $("ocrPreviewBody").querySelectorAll("[data-edit-points]").forEach(el => { ocrDrafts[Number(el.dataset.editPoints)].points = Number(el.value); });
+  $("ocrPreviewBody").querySelectorAll("[data-edit-ovr]").forEach(el => { const v=el.value.trim(); ocrDrafts[Number(el.dataset.editOvr)].ovr = /^\\d{1,3}$/.test(v)?Number(v):null; });
   $("ocrPreviewBody").querySelectorAll("[data-select-row]").forEach(el => { ocrDrafts[Number(el.dataset.selectRow)].selected = el.checked; });
   updateSelectedCount();
 }
