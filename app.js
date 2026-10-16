@@ -770,7 +770,9 @@ async function init() {
     finally { button.disabled=false; }
   });
   $("fcConnectButton").addEventListener("click",()=>{
-    showMessage("EA account connection is not available yet: no supported, verified FC Mobile league/AP API or authorization flow has been confirmed. Do not enter an EA password or OTP here. Screenshot import remains available.",true);
+    $("scanForm").scrollIntoView({block:"center",behavior:"smooth"});
+    $("rosterImages").focus({preventScroll:true});
+    showMessage("Screenshot connector ready. Select screenshots from FC Mobile → League → Members, review every detected name/AP value, then save. Live EA account connection is disabled because no supported official league/AP interface has been verified. Do not enter EA credentials or OTPs here.");
   });
 
   if(window.turnstile && typeof window.initFcpTurnstile==="function") window.initFcpTurnstile();
