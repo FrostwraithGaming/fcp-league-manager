@@ -179,7 +179,7 @@ function renderSnapshots() {
   tbody.innerHTML = allSnapshots.map(s => {
     const status = s.status === "complete" ? "Saved" : s.status === "partial" ? "Partial" : s.status;
     return '<tr><td>' + safe(new Date(s.scanned_at).toLocaleString()) + '</td><td>' +
-      safe(s.source==="reviewed_screenshot_ocr" ? "Screenshot OCR" : "Manual entry") + '</td><td>' +
+      safe(s.source==="reviewed_screenshot_ocr" ? "Screenshot OCR" : s.source==="reviewed_roster_import" ? "Reviewed AP import" : "Manual entry") + '</td><td>' +
       safe(s.saved_rows) + ' / ' + safe(s.detected_rows) + '</td><td>' + safe(s.skipped_rows) + '</td><td>' +
       '<span class="status-pill ' + (s.status==="complete"?"good":"neutral") + '">' + safe(status) +
       (Number(s.failed_rows) ? ' · ' + safe(s.failed_rows) + ' failed' : '') + '</span></td></tr>';
@@ -478,7 +478,7 @@ async function saveOcrSnapshot() {
     const {data:userData,error:userError}=await db.auth.getUser();
     if(userError) throw userError;
     const {data:snapshot,error:snapshotError}=await db.from("league_roster_snapshots").insert({
-      workspace_id:activeWorkspaceId,scanned_at:scannedAt,source:"reviewed_screenshot_ocr",
+      workspace_id:activeWorkspaceId,scanned_at:scannedAt,source:ocrDrafts.some(r=>r.source==="pasted")?"reviewed_roster_import":"reviewed_screenshot_ocr",
       uploaded_by:userData.user?.id||null,detected_rows:ocrDrafts.length,status:"processing"
     }).select("id").single();
     if(snapshotError) throw snapshotError;
@@ -916,6 +916,7 @@ function renderOCRDrafts() {
       '<tr><td><input class="row-check" type="checkbox" data-select-row="' + i + '" ' + (r.selected ? "checked" : "") + ' aria-label="Select ' + safe(r.name) + '"></td>' +
       '<td><input class="ocr-edit name-edit" type="text" maxlength="80" data-edit-name="' + i + '" value="' + safe(r.name) + '" aria-label="Edit player name"></td>' +
       '<td><input class="ocr-edit ap-edit" type="number" min="0" max="9999999" step="1" data-edit-points="' + i + '" value="' + r.points + '" aria-label="Edit activity points"></td>' +
+      '<td><input class="ocr-edit ap-edit" type="number" min="1" max="999" step="1" data-edit-ovr="' + i + '" value="' + (r.ovr ?? "") + '" aria-label="Edit player OVR"></td>' +
       '<td><span class="confidence">' + r.confidence + '%</span></td></tr>'
     ).join("");
   }
